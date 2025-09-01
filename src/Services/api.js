@@ -1,7 +1,7 @@
 // src/services/api.js - Enhanced API Service with Axios
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://quizapp.site/';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://quizapp.site/api';
 
 class ApiService {
   constructor() {
