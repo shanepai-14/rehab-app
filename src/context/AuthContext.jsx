@@ -20,17 +20,29 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const login = async (credentials) => {
+    const login = async (credentials) => {
     try {
-      const result = await apiService.login(credentials);
-      if (result.data.success) {
+        const result = await apiService.login(credentials);
+
+        if (result.data.success) {
         setUser(result.data.user);
-      }
-      return result;
+        }
+
+        return { success: true, data: result.data };
     } catch (error) {
-      throw error;
+        // Only return structured response for known API errors (401, 422, etc.)
+        if (error.response) {
+        return {
+            success: false,
+            data: error.response.data || { message: 'Login failed' },
+        };
+        }
+
+        // For true network/unknown errors → throw
+        throw error;
     }
-  };
+    };
+
 
   const register = async (userData) => {
     try {

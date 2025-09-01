@@ -140,20 +140,24 @@ class ApiService {
 
   // ==================== AUTHENTICATION METHODS ====================
 
-  async login(credentials) {
-    try {
-      const data = await this.client.post('/auth/login', credentials);
-      
-      if (data.success && data.token) {
-        this.setToken(data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-      }
-      
-      return data;
-    } catch (error) {
-      throw error;
+async login(credentials) {
+  try {
+    const res = await this.client.post('/auth/login', credentials);
+
+    if (res.data.success && res.data.token) {
+      this.setToken(res.data.token);
+      localStorage.setItem('user', JSON.stringify(res.data.user));
     }
+
+    return { success: true, data: res.data };
+  } catch (error) {
+    // Handle axios errors gracefully
+    return {
+      success: false,
+      data: error.response?.data || { message: "Login failed" },
+    };
   }
+}
 
   async register(userData) {
     try {

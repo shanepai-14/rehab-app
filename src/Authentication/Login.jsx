@@ -41,20 +41,21 @@ const handleSubmit = async (e) => {
     try {
       // Use AuthContext login method instead of direct API call
       const result = await login(formData);
-      
+      console.log(result);
       if (result.data.success) {
          const from = location.state?.from?.pathname || '/';
         const dashboardPath = getDashboardPath(result.data.user.role);
         console.log('Login successful, redirecting to:', from !== '/' ? from : dashboardPath);
         navigate(from !== '/' ? from : dashboardPath, { replace: true });
       } else {
-        setErrors({ login: result.message || 'Login failed' });
+        console.log(result);
+        setErrors({ login: result.data.message || 'Login failed' });
       }
     } catch (error) {
       console.error('Login error:', error);
-      setErrors({ 
-        login: error.message || 'Something went wrong. Please try again.' 
-      });
+      // setErrors({ 
+      //   login: error.message || 'Something went wrong. Please try again.' 
+      // });
     }
     
     setLoading(false);
