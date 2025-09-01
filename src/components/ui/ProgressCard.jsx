@@ -1,6 +1,6 @@
 
 
-export default ProgressCard = ({ title, progress, color, icon: Icon, subtitle }) => {
+export default function ProgressCard ({  title, progress, color, icon: Icon, subtitle }) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-lg dark:shadow-gray-900/20">
       <div className="flex items-center mb-3">
