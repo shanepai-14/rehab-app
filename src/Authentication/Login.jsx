@@ -1,18 +1,26 @@
 import  { useState} from 'react';
 
+
 import { 
   Phone, 
   Mail, 
   Lock, 
   Shield,
 } from 'lucide-react';
+import { useNavigate ,useLocation } from 'react-router-dom';
 
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
+import { useAuth } from '../hooks/useAuth';
 
 import api from '../Services/api';
+import { getDashboardPath } from '../utils/navigation';
 
-export default function  Login ({  onLogin, onSwitchToRegister }) {
+export default function  Login ({  }) {
+    const location = useLocation();
+    const navigate = useNavigate();
+    const { login } = useAuth();
+
   const [formData, setFormData] = useState({
     login: '',
     password: '',
@@ -21,20 +29,32 @@ export default function  Login ({  onLogin, onSwitchToRegister }) {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
+const handleSwitchToRegister = () => {
+    navigate('/register');
+  };
+
+const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setErrors({});
 
     try {
-      const result = await api.login(formData);
-      if (result.success) {
-        onLogin(result.user);
+      // Use AuthContext login method instead of direct API call
+      const result = await login(formData);
+      
+      if (result.data.success) {
+         const from = location.state?.from?.pathname || '/';
+        const dashboardPath = getDashboardPath(result.data.user.role);
+        console.log('Login successful, redirecting to:', from !== '/' ? from : dashboardPath);
+        navigate(from !== '/' ? from : dashboardPath, { replace: true });
       } else {
-        setErrors({ login: result.error });
+        setErrors({ login: result.message || 'Login failed' });
       }
     } catch (error) {
-      setErrors({ login: 'Something went wrong. Please try again.' });
+      console.error('Login error:', error);
+      setErrors({ 
+        login: error.message || 'Something went wrong. Please try again.' 
+      });
     }
     
     setLoading(false);
@@ -107,7 +127,7 @@ export default function  Login ({  onLogin, onSwitchToRegister }) {
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Don't have an account?{' '}
               <button
-                onClick={onSwitchToRegister}
+                onClick={handleSwitchToRegister}
                 className="font-medium text-blue-600 hover:text-blue-500"
               >
                 Register as Patient

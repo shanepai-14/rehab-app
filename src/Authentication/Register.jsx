@@ -1,9 +1,11 @@
-import { useState} from 'react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 
 import api from '../Services/api';
+import useAuth from '../hooks/useAuth';
 
 import { 
   Phone, 
@@ -12,20 +14,23 @@ import {
   UserPlus,
 } from 'lucide-react';
 
-export default function  Register ({  onRegister, onSwitchToLogin }) {
+export default function Register({ onSwitchToLogin }) {
+  const navigate = useNavigate();
+  const { register , setPendingVerification } = useAuth(); // Get setPendingVerification from context
+  
   const [formData, setFormData] = useState({
-    lastName: '',
-    firstName: '',
-    middleInitial: '',
+    last_name: '',
+    first_name: '',
+    middle_initial: '',
     sex: '',
-    birthDate: '',
+    birth_date: '',
     address: '',
-    contactNumber: '',
+    contact_number: '',
     province: '',
     district: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirm_password: ''
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -45,17 +50,23 @@ export default function  Register ({  onRegister, onSwitchToLogin }) {
 
     // Validation
     const newErrors = {};
-    if (!formData.firstName) newErrors.firstName = 'First name is required';
-    if (!formData.lastName) newErrors.lastName = 'Last name is required';
+    if (!formData.first_name) newErrors.first_name = 'First name is required';
+    if (!formData.last_name) newErrors.last_name = 'Last name is required';
     if (!formData.sex) newErrors.sex = 'Sex is required';
-    if (!formData.birthDate) newErrors.birthDate = 'Birth date is required';
+    if (!formData.birth_date) newErrors.birth_date = 'Birth date is required';
     if (!formData.address) newErrors.address = 'Address is required';
-    if (!formData.contactNumber) newErrors.contactNumber = 'Contact number is required';
+    if (!formData.contact_number) newErrors.contact_number = 'Contact number is required';
     if (!formData.province) newErrors.province = 'Province is required';
     if (!formData.district) newErrors.district = 'District is required';
     if (!formData.password) newErrors.password = 'Password is required';
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+    if (formData.password !== formData.confirm_password) {
+      newErrors.confirm_password = 'Passwords do not match';
+    }
+
+    // Phone number format validation
+    const phoneRegex = /^09\d{9}$/;
+    if (formData.contact_number && !phoneRegex.test(formData.contact_number)) {
+      newErrors.contact_number = 'Please enter a valid Philippine phone number (09xxxxxxxxx)';
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -65,12 +76,34 @@ export default function  Register ({  onRegister, onSwitchToLogin }) {
     }
 
     try {
-      const result = await api.register(formData);
-      if (result.success) {
-        onRegister(formData.contactNumber);
+      const result = await register(formData);
+
+      console.log(result);
+      if (result.data.success) {
+        // Store the pending verification phone number in context
+        setPendingVerification(formData.contact_number);
+        console.log(result);
+        console.log(result.data.success);
+        // Navigate to OTP verification with phone number as URL parameter
+        navigate(`/verify/${encodeURIComponent(formData.contact_number)}`, { 
+          replace: true 
+        });
+      } else {
+        // Handle API errors
+        setErrors({ 
+          submit: result.message || 'Registration failed. Please try again.' 
+        });
       }
     } catch (error) {
-      setErrors({ submit: 'Registration failed. Please try again.' });
+      console.error('Registration error:', error);
+      if (error.response?.data?.errors) {
+        // Handle validation errors from backend
+        setErrors(error.response.data.errors);
+      } else {
+        setErrors({ 
+          submit: error.response?.data?.message || 'Registration failed. Please try again.' 
+        });
+      }
     }
     
     setLoading(false);
@@ -103,18 +136,18 @@ export default function  Register ({  onRegister, onSwitchToLogin }) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   label="First Name"
-                  value={formData.firstName}
-                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                  value={formData.first_name}
+                  onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
                   placeholder="Enter first name"
-                  error={errors.firstName}
+                  error={errors.first_name}
                   required
                 />
                 <Input
                   label="Last Name"
-                  value={formData.lastName}
-                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                  value={formData.last_name}
+                  onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
                   placeholder="Enter last name"
-                  error={errors.lastName}
+                  error={errors.last_name}
                   required
                 />
               </div>
@@ -122,8 +155,8 @@ export default function  Register ({  onRegister, onSwitchToLogin }) {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <Input
                   label="Middle Initial"
-                  value={formData.middleInitial}
-                  onChange={(e) => setFormData({ ...formData, middleInitial: e.target.value.slice(0, 1) })}
+                  value={formData.middle_initial}
+                  onChange={(e) => setFormData({ ...formData, middle_initial: e.target.value.slice(0, 1) })}
                   placeholder="M"
                   maxLength="1"
                 />
@@ -135,7 +168,7 @@ export default function  Register ({  onRegister, onSwitchToLogin }) {
                   <select
                     value={formData.sex}
                     onChange={(e) => setFormData({ ...formData, sex: e.target.value })}
-                    className="w-full px-3 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white text-sm sm:text-base"
+                    className={`w-full px-3 py-3 border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white text-sm sm:text-base ${errors.sex ? 'border-red-500' : 'border-gray-300'}`}
                   >
                     <option value="">Select</option>
                     <option value="male">Male</option>
@@ -148,9 +181,9 @@ export default function  Register ({  onRegister, onSwitchToLogin }) {
                 <Input
                   label="Birth Date"
                   type="date"
-                  value={formData.birthDate}
-                  onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
-                  error={errors.birthDate}
+                  value={formData.birth_date}
+                  onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
+                  error={errors.birth_date}
                   required
                 />
               </div>
@@ -165,12 +198,17 @@ export default function  Register ({  onRegister, onSwitchToLogin }) {
               <div className="space-y-4">
                 <Input
                   label="Contact Number"
-                  value={formData.contactNumber}
-                  onChange={(e) => setFormData({ ...formData, contactNumber: e.target.value })}
+                  value={formData.contact_number}
+                  onChange={(e) => {
+                    // Only allow numbers and limit to 11 digits
+                    const value = e.target.value.replace(/\D/g, '').slice(0, 11);
+                    setFormData({ ...formData, contact_number: value });
+                  }}
                   placeholder="09123456789"
                   icon={Phone}
-                  error={errors.contactNumber}
+                  error={errors.contact_number}
                   required
+                  maxLength="11"
                 />
 
                 <Input
@@ -180,6 +218,7 @@ export default function  Register ({  onRegister, onSwitchToLogin }) {
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="your.email@example.com"
                   icon={Mail}
+                  error={errors.email}
                 />
 
                 <div className="space-y-1">
@@ -191,7 +230,7 @@ export default function  Register ({  onRegister, onSwitchToLogin }) {
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                     placeholder="Enter complete address"
                     rows="3"
-                    className="w-full px-3 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 text-sm sm:text-base"
+                    className={`w-full px-3 py-3 border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 text-sm sm:text-base ${errors.address ? 'border-red-500' : 'border-gray-300'}`}
                   />
                   {errors.address && <p className="text-sm text-red-600">{errors.address}</p>}
                 </div>
@@ -212,7 +251,7 @@ export default function  Register ({  onRegister, onSwitchToLogin }) {
                   <select
                     value={formData.province}
                     onChange={(e) => setFormData({ ...formData, province: e.target.value })}
-                    className="w-full px-3 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white text-sm sm:text-base"
+                    className={`w-full px-3 py-3 border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white text-sm sm:text-base ${errors.province ? 'border-red-500' : 'border-gray-300'}`}
                   >
                     <option value="">Select Province</option>
                     {provinces.map(province => (
@@ -263,16 +302,17 @@ export default function  Register ({  onRegister, onSwitchToLogin }) {
                   showPasswordToggle={true}
                   error={errors.password}
                   required
+                  minLength="8"
                 />
                 <Input
                   label="Confirm Password"
                   type="password"
-                  value={formData.confirmPassword}
-                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                  value={formData.confirm_password}
+                  onChange={(e) => setFormData({ ...formData, confirm_password: e.target.value })}
                   placeholder="Confirm password"
                   icon={Lock}
                   showPasswordToggle={true}
-                  error={errors.confirmPassword}
+                  error={errors.confirm_password}
                   required
                 />
               </div>
@@ -302,4 +342,4 @@ export default function  Register ({  onRegister, onSwitchToLogin }) {
       </div>
     </div>
   );
-};
+}

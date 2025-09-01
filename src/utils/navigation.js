@@ -7,6 +7,16 @@ export const getDefaultRoute = (userRole) => {
   return routes[userRole] || '/patient';
 };
 
+
+export const getDashboardPath = (role) => {
+  switch (role) {
+    case 'admin': return '/admin';
+    case 'doctor': return '/doctor';
+    case 'patient': return '/patient';
+    default: return '/patient';
+  }
+};
+
 export const isPublicRoute = (pathname) => {
   const publicRoutes = ['/login', '/register', '/verify', '/unauthorized', '/404'];
   return publicRoutes.some(route => pathname.startsWith(route));

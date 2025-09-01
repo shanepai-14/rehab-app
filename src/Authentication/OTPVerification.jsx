@@ -3,17 +3,25 @@ import { useState , useEffect } from 'react';
 import api from '../Services/api';
 
 import Button from "../components/ui/Button";
+import { getDashboardPath } from '../utils/navigation';
+import useAuth from '../hooks/useAuth';
 
 import { 
   Phone, 
 } from 'lucide-react';
+import { useNavigate , useLocation } from 'react-router-dom';
 
 export default function OTPVerification ({  phoneNumber, onVerify, onResend }) {
+
+     const location = useLocation();
+     const navigate = useNavigate();
+
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [error, setError] = useState('');
-  const [resendTimer, setResendTimer] = useState(60);
+  const [resendTimer, setResendTimer] = useState(10);
+  const { verifyOTP } = useAuth();
 
   useEffect(() => {
     if (resendTimer > 0) {
@@ -57,13 +65,17 @@ export default function OTPVerification ({  phoneNumber, onVerify, onResend }) {
     setError('');
 
     try {
-      const result = await api.verifyOTP(phoneNumber, otpCode);
-      if (result.success) {
-        onVerify();
+      const result = await verifyOTP(phoneNumber, otpCode);
+      if (result.data.success) {
+        const from = location.state?.from?.pathname || '/';
+        const dashboardPath = getDashboardPath(result.data.user.role);
+        console.log('Login successful, redirecting to:', from !== '/' ? from : dashboardPath);
+        navigate(from !== '/' ? from : dashboardPath, { replace: true });
       } else {
         setError('Invalid verification code. Please try again.');
       }
     } catch (error) {
+        console.log(error);
       setError('Verification failed. Please try again.');
     }
     

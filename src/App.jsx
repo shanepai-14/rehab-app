@@ -14,6 +14,7 @@ import {
 import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './hooks/useAuth';
 
+
 // Import your existing components
 import AdminDashboard from './Dashboard/AdminDashboard';
 import PatientDashboard from './Dashboard/PatientDashboard';
@@ -21,6 +22,7 @@ import DoctorDashboard from './Dashboard/DoctorDashboard';
 import Login from './Authentication/Login';
 import OTPVerification from './Authentication/OTPVerification';
 import Register from './Authentication/Register';
+import { getDashboardPath } from './utils/navigation';
 
 
 // ==================== ROUTE PROTECTION ====================
@@ -66,80 +68,23 @@ const PublicRoute = ({ children }) => {
   return children;
 };
 
-// ==================== UTILITY FUNCTIONS ====================
-const getDashboardPath = (role) => {
-  switch (role) {
-    case 'admin': return '/admin';
-    case 'doctor': return '/doctor';
-    case 'patient':
-    default: return '/patient';
-  }
-};
+
 
 // ==================== ENHANCED COMPONENTS ====================
 
 // Enhanced Login Component
-const LoginWithRouter = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { login } = useAuth();
-  const [formData, setFormData] = useState({ login: '', password: '', remember: false });
-  const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
 
-  const from = location.state?.from?.pathname || '/';
-
-  const handleLogin = async (userData) => {
-    setLoading(true);
-    setErrors({});
-
-    try {
-      const result = await login(userData);
-      if (result.success) {
-        const dashboardPath = getDashboardPath(result.user.role);
-        navigate(from !== '/' ? from : dashboardPath, { replace: true });
-      } else {
-        setErrors({ login: result.error });
-      }
-    } catch (error) {
-      setErrors({ login: 'Something went wrong. Please try again.' });
-    }
-    setLoading(false);
-  };
-
-  const handleSwitchToRegister = () => {
-    navigate('/register');
-  };
-
-  return (
-    <Login 
-      onLogin={handleLogin}
-      onSwitchToRegister={handleSwitchToRegister}
-      formData={formData}
-      setFormData={setFormData}
-      errors={errors}
-      loading={loading}
-    />
-  );
-};
 
 // Enhanced Register Component
 const RegisterWithRouter = () => {
   const navigate = useNavigate();
-  const { register } = useAuth();
-
-  const handleRegister = async (phoneNumber) => {
-    // Registration logic handled in component
-    navigate(`/verify/${phoneNumber}`);
-  };
 
   const handleSwitchToLogin = () => {
-    navigate('/login');
+    navigate('/login', { replace: true });
   };
 
   return (
     <Register 
-      onRegister={handleRegister}
       onSwitchToLogin={handleSwitchToLogin}
     />
   );
@@ -304,7 +249,7 @@ const routes = [
     path: "/login",
     element: (
       <PublicRoute>
-        <LoginWithRouter />
+        <Login/>
       </PublicRoute>
     )
   },
@@ -329,7 +274,7 @@ const routes = [
     element: (
       <ProtectedRoute allowedRoles={['patient']}>
         <PatientDashboardWithRouter />
-      </ProtectedRoute>
+       </ProtectedRoute>
     )
   },
   {

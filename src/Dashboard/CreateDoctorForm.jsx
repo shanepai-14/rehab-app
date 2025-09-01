@@ -12,18 +12,18 @@ import Button from "../components/ui/Button";
 
 export default function CreateDoctorForm ({  onBack }) {
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    middleInitial: '',
+    first_name: '',
+    last_name: '',
+    middle_initial: '',
     sex: '',
-    birthDate: '',
+    birth_date: '',
     address: '',
-    contactNumber: '',
+    contact_number: '',
     province: '',
     district: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirm_password: ''
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -85,15 +85,15 @@ export default function CreateDoctorForm ({  onBack }) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   label="First Name"
-                  value={formData.firstName}
-                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                  value={formData.first_name}
+                  onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
                   placeholder="Enter first name"
                   required
                 />
                 <Input
                   label="Last Name"
-                  value={formData.lastName}
-                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                  value={formData.last_name}
+                  onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
                   placeholder="Enter last name"
                   required
                 />
@@ -102,8 +102,8 @@ export default function CreateDoctorForm ({  onBack }) {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <Input
                   label="Middle Initial"
-                  value={formData.middleInitial}
-                  onChange={(e) => setFormData({ ...formData, middleInitial: e.target.value.slice(0, 1) })}
+                  value={formData.middle_initial}
+                  onChange={(e) => setFormData({ ...formData, middle_initial: e.target.value.slice(0, 1) })}
                   placeholder="M"
                   maxLength="1"
                 />
@@ -128,8 +128,8 @@ export default function CreateDoctorForm ({  onBack }) {
                 <Input
                   label="Birth Date"
                   type="date"
-                  value={formData.birthDate}
-                  onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
+                  value={formData.birth_date}
+                  onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
                   required
                 />
               </div>
@@ -144,8 +144,8 @@ export default function CreateDoctorForm ({  onBack }) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   label="Contact Number"
-                  value={formData.contactNumber}
-                  onChange={(e) => setFormData({ ...formData, contactNumber: e.target.value })}
+                  value={formData.contact_number}
+                  onChange={(e) => setFormData({ ...formData, contact_number: e.target.value })}
                   placeholder="09123456789"
                   icon={Phone}
                   required
@@ -175,8 +175,8 @@ export default function CreateDoctorForm ({  onBack }) {
                 <Input
                   label="Confirm Password"
                   type="password"
-                  value={formData.confirmPassword}
-                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                  value={formData.confirm_password}
+                  onChange={(e) => setFormData({ ...formData, confirm_password: e.target.value })}
                   placeholder="Confirm password"
                   icon={Lock}
                   showPasswordToggle={true}

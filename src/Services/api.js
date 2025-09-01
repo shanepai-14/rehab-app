@@ -163,26 +163,26 @@ class ApiService {
     }
   }
 
-  async sendOTP(contactNumber) {
+  async sendOTP(contact_number) {
     try {
       return await this.client.post('/auth/send-otp', {
-        contact_number: contactNumber
+        contact_number: contact_number
       });
     } catch (error) {
       throw error;
     }
   }
 
-  async verifyOTP(contactNumber, otpCode) {
+  async verifyOTP(contact_number, otpCode) {
     try {
       const data = await this.client.post('/auth/verify-otp', {
-        contact_number: contactNumber,
+        contact_number: contact_number,
         otp_code: otpCode
       });
       
-      if (data.success && data.token) {
-        this.setToken(data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+      if (data.data.success && data.data.token) {
+        this.setToken(data.data.token);
+        localStorage.setItem('user', JSON.stringify(data.data.user));
       }
       
       return data;

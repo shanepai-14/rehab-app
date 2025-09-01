@@ -3,11 +3,11 @@ import { useState } from "react";
 import { 
   User, 
   Calendar,
-  Stethoscope,
   Activity,
   Users,
   LogOut,
   Bell,
+
 } from 'lucide-react';
 
 export default function PatientDashboard ({  user, onLogout }) {
@@ -122,7 +122,7 @@ export default function PatientDashboard ({  user, onLogout }) {
                     : 'text-gray-600 dark:text-gray-400'
                 }`}
               >
-                <Icon className="h-5 w-5 mb-1" />
+                {/* <Icon className="h-5 w-5 mb-1" /> */}
                 <span className="text-xs font-medium">{tab.label}</span>
               </button>
             );

@@ -23,8 +23,8 @@ export const AuthProvider = ({ children }) => {
   const login = async (credentials) => {
     try {
       const result = await apiService.login(credentials);
-      if (result.success) {
-        setUser(result.user);
+      if (result.data.success) {
+        setUser(result.data.user);
       }
       return result;
     } catch (error) {
@@ -35,8 +35,11 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       const result = await apiService.register(userData);
-      if (result.success) {
-        setPendingVerification(userData.contactNumber);
+      if (result.data.success) {
+        setPendingVerification(userData.contact_number);
+        
+        localStorage.setItem('auth_token', result.data.token);
+        localStorage.setItem('user', JSON.stringify(result.data.user));
       }
       return result;
     } catch (error) {
@@ -47,8 +50,10 @@ export const AuthProvider = ({ children }) => {
   const verifyOTP = async (phoneNumber, otp) => {
     try {
       const result = await apiService.verifyOTP(phoneNumber, otp);
-      if (result.success) {
-        setUser(result.user);
+      if (result.data.success) {
+        setUser(result.data.user);
+        localStorage.setItem('auth_token', result.data.token);
+        localStorage.setItem('user', JSON.stringify(result.data.user));
         setPendingVerification(null);
       }
       return result;
