@@ -197,7 +197,7 @@ async login(credentials) {
 
   async logout() {
     try {
-      const data = await this.client.post('/auth/logout');
+      const data = await this.client.post('/logout');
       this.clearToken();
       return data;
     } catch (error) {

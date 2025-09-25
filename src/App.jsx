@@ -1,5 +1,6 @@
 // App.jsx - Main Application with React Router
 import React, { useState, useEffect, createContext, useContext } from 'react';
+import { Toaster } from 'sonner'
 import { 
   BrowserRouter as Router,
   Routes,
@@ -322,6 +323,7 @@ const router = createBrowserRouter(routes);
 const App = () => {
   return (
     <AuthProvider>
+    <Toaster richColors position="top-right" closeButton/>
       <RouterProvider router={router} />
     </AuthProvider>
   );
