@@ -711,7 +711,7 @@ const handleSaveAppointment = async (appointmentData) => {
       // ✅ Success
       toast.success('Appointment created successfully');
 
-      const newAppointment = response.data.appointment;
+      const newAppointment = response.data.data.appointment;
       const patient = patients.find(p => p.id == appointmentData.patientId);
       
       const calendarEvent = {
