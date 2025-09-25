@@ -35,7 +35,9 @@ export default function Button ({
       disabled={disabled || loading}
       {...props}
     >
-      {loading ? <LoadingSpinner /> : children}
+      {loading ? <div className="flex items-center justify-center">
+    <LoadingSpinner size={16} />
+  </div> : children}
     </button>
   );
 };

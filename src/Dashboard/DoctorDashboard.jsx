@@ -15,12 +15,13 @@ import {
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import apiService from '../Services/api';
 import { toast } from 'sonner';
-import AppointmentCalendar from './components/AppointmentCalendar';
-import UpcomingAppointments from './components/UpcomingAppointments';
-import ErrorAlert from './components/ErrorAlert';
-import PatientsModal from './components/PatientsModal';
-import DashboardStats from './components/DashboardStats';
-import QuickActions from './components/QuickActions';
+import AppointmentCalendar from './components/doctor/AppointmentCalendar';
+import UpcomingAppointments from './components/doctor/UpcomingAppointments';
+import ErrorAlert from './components/doctor/ErrorAlert';
+import PatientsModal from './components/doctor/PatientsModal';
+import DashboardStats from './components/doctor/DashboardStats';
+import QuickActions from './components/doctor/QuickActions';
+import LoadingSpinner from './components/doctor/LoadingSpinner';
 
 
 const AppointmentModal = ({ isOpen, onClose, appointment, patients, onSave, isLoading }) => {
