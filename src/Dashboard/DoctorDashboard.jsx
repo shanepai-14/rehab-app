@@ -10,7 +10,8 @@ import {
   TrendingUp,
   Loader2,
   Search,
-  LogOut 
+  LogOut,
+  Bell
 } from 'lucide-react';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import apiService from '../Services/api';
@@ -716,11 +717,11 @@ const handleSaveAppointment = async (appointmentData) => {
       
       const calendarEvent = {
         id: newAppointment.id,
-        title: `${patient?.name} - ${appointmentData.agenda}`,
+        title: `${patient?.first_name} - ${appointmentData.agenda}`,
         start: appointmentData.start,
         end: appointmentData.end,
         resource: {
-          patient: patient?.name,
+          patient: patient?.first_name,
           status: 'scheduled',
           agenda: appointmentData.agenda,
           priority: appointmentData.priority || 'normal',
@@ -829,22 +830,27 @@ const handleSaveAppointment = async (appointmentData) => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-6 flex justify-between">
-         <div>
-           <h1 className="text-3xl font-bold text-gray-900">Doctor Dashboard</h1>
-          <p className="text-gray-600">Manage your appointments and patients efficiently</p>
-         </div>
-
+      <div className="bg-white dark:bg-gray-800 shadow-sm mb-2">
+        <div className="px-4 py-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Doctor Portal</h1>
+            <div className="flex items-center space-x-3">
+              <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                <Bell className="h-5 w-5" />
+              </button>
               <button 
-              onClick={onLogout}
-              className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600"
-            >
-              <LogOut className="h-5 w-5" />
-            </button>
+                onClick={onLogout}
+                className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600"
+              >
+                <LogOut className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
         </div>
+      </div>
 
         {/* Error Alert */}
         {error && (
