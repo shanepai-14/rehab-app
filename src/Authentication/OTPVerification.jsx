@@ -85,7 +85,7 @@ export default function OTPVerification ({  phoneNumber, onVerify, onResend }) {
   const handleResend = async () => {
     setResendLoading(true);
     try {
-      await api.sendOTP(phoneNumber);
+      await api.resendOTP(phoneNumber);
       setResendTimer(60);
       setOtp(['', '', '', '', '', '']);
     } catch (error) {

@@ -167,9 +167,9 @@ async login(credentials) {
     }
   }
 
-  async sendOTP(contact_number) {
+  async resendOTP(contact_number) {
     try {
-      return await this.client.post('/auth/send-otp', {
+      return await this.client.post('/auth/resend-otp', {
         contact_number: contact_number
       });
     } catch (error) {
