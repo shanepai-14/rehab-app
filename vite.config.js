@@ -13,9 +13,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'Your App Name',
-        short_name: 'App',
-        description: 'Your app description',
+        name: 'Rehab App',
+        short_name: 'Rehab',
+        description: 'Drug Rehabilitaion and Recovery System',
         theme_color: '#ffffff',
         background_color: '#ffffff',
         display: 'standalone',
