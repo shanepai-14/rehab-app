@@ -12,8 +12,7 @@ import { useNavigate ,useLocation } from 'react-router-dom';
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import { useAuth } from '../hooks/useAuth';
-
-import api from '../Services/api';
+import RehabLogo from "@/assets/rehab_main_logo.png"; ;
 import { getDashboardPath } from '../utils/navigation';
 
 export default function  Login ({  }) {
@@ -73,12 +72,13 @@ const handleSubmit = async (e) => {
       <div className="max-w-md w-full space-y-6">
         {/* Header */}
         <div className="text-center">
-          <div className="mx-auto h-16 w-16 bg-blue-600 rounded-xl flex items-center justify-center mb-4">
-            <Shield className="h-8 w-8 text-white" />
+          <div className="mx-auto  rounded-xl flex items-center justify-center  overflow-hidden">
+            <img 
+              src={RehabLogo} 
+              alt="Rehab Logo" 
+              className="object-contain" 
+            />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            Welcome Back
-          </h2>
           <p className="text-sm text-gray-600 dark:text-gray-400">
             Sign in to your account to continue
           </p>
