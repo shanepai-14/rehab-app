@@ -14,6 +14,8 @@ import {
 } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './hooks/useAuth';
+import { usePusherNotifications } from './hooks/usePusherNotifications';
+import pusherService from './Services/pusher';
 
 
 // Import your existing components
@@ -30,6 +32,15 @@ import { getDashboardPath } from './utils/navigation';
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   const { user, loading } = useAuth();
   const location = useLocation();
+
+  usePusherNotifications(user);
+
+  // Cleanup on app unmount
+  useEffect(() => {
+    return () => {
+      pusherService.disconnect();
+    };
+  }, []);
 
   if (loading) {
     return (
