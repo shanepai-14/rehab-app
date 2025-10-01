@@ -103,12 +103,12 @@ const RegisterWithRouter = () => {
 };
 
 // Enhanced OTP Verification
-const OTPVerificationWithRouter = () => {
+ const OTPVerificationWithRouter = () => {
   const navigate = useNavigate();
   const { phoneNumber } = useParams();
   const { verifyOTP, pendingVerification } = useAuth();
 
-  const actualPhoneNumber = phoneNumber || pendingVerification;
+  const actualPhoneNumber = decodeURIComponent(phoneNumber || pendingVerification || '');
 
   useEffect(() => {
     if (!actualPhoneNumber) {

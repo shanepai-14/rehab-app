@@ -1,27 +1,35 @@
-import { useState , useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 
 import api from '../Services/api';
-
 import Button from "../components/ui/Button";
 import { getDashboardPath } from '../utils/navigation';
 import useAuth from '../hooks/useAuth';
 
-import { 
-  Phone, 
-} from 'lucide-react';
-import { useNavigate , useLocation } from 'react-router-dom';
+import { Phone } from 'lucide-react';
 
-export default function OTPVerification ({  phoneNumber, onVerify, onResend }) {
-
-     const location = useLocation();
-     const navigate = useNavigate();
+export default function OTPVerification({ phoneNumber, onVerify, onResend }) {
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [error, setError] = useState('');
-  const [resendTimer, setResendTimer] = useState(10);
+  const [resendTimer, setResendTimer] = useState(60);
+  const [autoResendAttempted, setAutoResendAttempted] = useState(false);
   const { verifyOTP } = useAuth();
+
+  // Check if this is a reverification request
+  const isReverification = location.search.includes('reverification');
+
+  // Auto-resend OTP on load if reverification
+  useEffect(() => {
+    if (isReverification && !autoResendAttempted && phoneNumber) {
+      setAutoResendAttempted(true);
+      handleResend(true);
+    }
+  }, [isReverification, phoneNumber, autoResendAttempted]);
 
   useEffect(() => {
     if (resendTimer > 0) {
@@ -75,22 +83,41 @@ export default function OTPVerification ({  phoneNumber, onVerify, onResend }) {
         setError('Invalid verification code. Please try again.');
       }
     } catch (error) {
-        console.log(error);
-      setError('Verification failed. Please try again.');
+      console.log(error);
+      setError(error.response?.data?.message || 'Verification failed. Please try again.');
     }
     
     setLoading(false);
   };
 
-  const handleResend = async () => {
+  const handleResend = async (isAutomatic = false) => {
     setResendLoading(true);
+    setError('');
+    
     try {
-      await api.resendOTP(phoneNumber);
-      setResendTimer(60);
-      setOtp(['', '', '', '', '', '']);
+      const response = await api.resendOTP(phoneNumber);
+
+      if (response.data.success) {
+        setResendTimer(60);
+        setOtp(['', '', '', '', '', '']);
+        
+        // Show success message only for manual resend
+        if (!isAutomatic) {
+          setError(''); // Clear any previous errors
+        }
+        
+        // Focus first input
+        setTimeout(() => {
+          document.getElementById('otp-0')?.focus();
+        }, 100);
+      } else {
+        setError(response.data.message || 'Failed to resend code. Please try again.');
+      }
     } catch (error) {
-      setError('Failed to resend code. Please try again.');
+      console.error('Resend error:', error);
+      setError(error.response?.data?.message || 'Failed to resend code. Please try again.');
     }
+    
     setResendLoading(false);
   };
 
@@ -111,6 +138,11 @@ export default function OTPVerification ({  phoneNumber, onVerify, onResend }) {
           <p className="text-sm font-medium text-gray-900 dark:text-white">
             {phoneNumber}
           </p>
+          {isReverification && (
+            <p className="text-sm text-blue-600 dark:text-blue-400 mt-2">
+              A new verification code has been sent
+            </p>
+          )}
         </div>
 
         {/* OTP Form */}
@@ -125,16 +157,17 @@ export default function OTPVerification ({  phoneNumber, onVerify, onResend }) {
                   inputMode="numeric"
                   maxLength="1"
                   value={digit}
-                  onChange={(e) => handleOtpChange(index, e.target.value)}
+                  onChange={(e) => handleOtpChange(index, e.target.value.replace(/\D/g, ''))}
                   onKeyDown={(e) => handleKeyDown(index, e)}
                   className="w-12 h-12 text-center text-lg font-bold border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  autoComplete="off"
                 />
               ))}
             </div>
 
             {error && (
-              <div className="text-center">
-                <p className="text-sm text-red-600">{error}</p>
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3">
+                <p className="text-sm text-red-600 dark:text-red-400 text-center">{error}</p>
               </div>
             )}
 
@@ -160,7 +193,7 @@ export default function OTPVerification ({  phoneNumber, onVerify, onResend }) {
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={handleResend}
+                onClick={() => handleResend(false)}
                 loading={resendLoading}
               >
                 Resend Code
@@ -168,15 +201,9 @@ export default function OTPVerification ({  phoneNumber, onVerify, onResend }) {
             )}
           </div>
         </div>
-
-        {/* Demo Note */}
-        <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4">
-          <p className="text-xs font-medium text-green-800 dark:text-green-200 mb-1">Demo Mode:</p>
-          <p className="text-xs text-green-700 dark:text-green-300">
-            Use code: <strong>123456</strong>
-          </p>
-        </div>
       </div>
     </div>
   );
-};
+}
+
+

@@ -49,7 +49,14 @@ const handleSubmit = async (e) => {
         navigate(from !== '/' ? from : dashboardPath, { replace: true });
       } else {
         console.log(result);
-        setErrors({ login: result.data.message || 'Login failed' });
+        if(result.data.requires_verification){
+    navigate(`/verify/${encodeURIComponent(result.data.contact_number)}?reverification=true`, { 
+        replace: true 
+      });
+        }else {
+          setErrors({ login: result.data.message || 'Login failed' });
+        }
+     
       }
     } catch (error) {
       console.error('Login error:', error);
