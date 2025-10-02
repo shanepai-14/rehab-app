@@ -15,7 +15,7 @@ export default defineConfig({
       manifest: {
         name: 'Rehab App',
         short_name: 'Rehab',
-        description: 'Drug Rehabilitaion and Recovery System',
+        description: 'Drug Rehabilitation and Recovery System',
         theme_color: '#ffffff',
         background_color: '#ffffff',
         display: 'standalone',
