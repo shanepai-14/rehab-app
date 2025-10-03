@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import ProfileTab from "./components/patient/ProfileTab";
 import DoctorsTab from "./components/patient/DoctorsTab";
 import AppointmentsTab from "./AppointmentsTab";
+import NotificationBell from "./components/NotificationBell";
 
 // Loading Spinner Component
 const LoadingSpinner = ({ message = "Loading..." }) => (
@@ -378,7 +379,7 @@ export default function PatientDashboard({ user, onLogout }) {
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">Patient Portal</h1>
             <div className="flex items-center space-x-3">
               <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-                <Bell className="h-5 w-5" />
+                <NotificationBell />
               </button>
               <button 
                 onClick={onLogout}

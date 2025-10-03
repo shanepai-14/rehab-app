@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { philippineLocations } from '../data/philippineLocations';
 
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
-
-import api from '../Services/api';
+import { toast } from 'sonner';
 import useAuth from '../hooks/useAuth';
 
 import { 
@@ -16,8 +16,130 @@ import {
   MapPin,
   Check,
   ChevronRight,
-  ChevronLeft
+  ChevronLeft,
+  Search,
+  X
 } from 'lucide-react';
+
+// Searchable Select Component
+const SearchableSelect = ({ 
+  label, 
+  value, 
+  onChange, 
+  options, 
+  placeholder, 
+  disabled, 
+  error,
+  required = false 
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredOptions = useMemo(() => {
+    if (!searchTerm) return options;
+    return options.filter(option =>
+      option.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [options, searchTerm]);
+
+  const handleSelect = (option) => {
+    onChange(option);
+    setSearchTerm('');
+    setIsOpen(false);
+  };
+
+  const handleClear = () => {
+    onChange('');
+    setSearchTerm('');
+  };
+
+  return (
+    <div className="space-y-1 relative">
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      
+      <div className="relative">
+        <div
+          className={`w-full px-3 py-3 border rounded-xl shadow-sm flex items-center justify-between cursor-pointer dark:bg-gray-800 dark:border-gray-600 dark:text-white text-sm sm:text-base ${
+            error ? 'border-red-500' : 'border-gray-300'
+          } ${disabled ? 'opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-700' : 'hover:border-blue-400'}`}
+          onClick={() => !disabled && setIsOpen(!isOpen)}
+        >
+          <span className={value ? 'text-gray-900 dark:text-white' : 'text-gray-400'}>
+            {value || placeholder}
+          </span>
+          <div className="flex items-center gap-2">
+            {value && !disabled && (
+              <X
+                size={16}
+                className="text-gray-400 hover:text-gray-600"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleClear();
+                }}
+              />
+            )}
+            <Search size={16} className="text-gray-400" />
+          </div>
+        </div>
+
+        {isOpen && !disabled && (
+          <>
+            {/* Backdrop */}
+            <div
+              className="fixed inset-0 z-10"
+              onClick={() => setIsOpen(false)}
+            />
+
+            {/* Dropdown */}
+            <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl shadow-lg max-h-60 overflow-hidden">
+              {/* Search Input */}
+              <div className="p-2 border-b border-gray-200 dark:border-gray-700">
+                <div className="relative">
+                  <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder={`Search ${label.toLowerCase()}...`}
+                    className="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              {/* Options List */}
+              <div className="overflow-y-auto max-h-48">
+                {filteredOptions.length > 0 ? (
+                  filteredOptions.map((option) => (
+                    <div
+                      key={option}
+                      onClick={() => handleSelect(option)}
+                      className={`px-4 py-2 cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-700 text-sm ${
+                        value === option
+                          ? 'bg-blue-100 dark:bg-gray-700 text-blue-600 dark:text-blue-400 font-medium'
+                          : 'text-gray-700 dark:text-gray-300'
+                      }`}
+                    >
+                      {option}
+                    </div>
+                  ))
+                ) : (
+                  <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 text-center">
+                    No results found
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {error && <p className="text-sm text-red-600">{error}</p>}
+    </div>
+  );
+};
 
 export default function Register({ onSwitchToLogin }) {
   const navigate = useNavigate();
@@ -29,10 +151,13 @@ export default function Register({ onSwitchToLogin }) {
     first_name: '',
     middle_initial: '',
     sex: '',
+    patient_type: '',
     birth_date: '',
     address: '',
     contact_number: '',
     province: '',
+    municipality: '',
+    barangay: '',
     district: '',
     email: '',
     password: '',
@@ -41,13 +166,38 @@ export default function Register({ onSwitchToLogin }) {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
-  const provinces = [
-    'Davao del Norte',
-    'Davao del Sur', 
-    'Davao Oriental',
-    'Davao Occidental',
-    'Davao de Oro'
-  ];
+  // Get available provinces
+  const provinces = Object.keys(philippineLocations);
+
+  // Get municipalities based on selected province
+  const municipalities = useMemo(() => {
+    if (!formData.province) return [];
+    return Object.keys(philippineLocations[formData.province]?.municipalities || {});
+  }, [formData.province]);
+
+  // Get barangays based on selected municipality
+  const barangays = useMemo(() => {
+    if (!formData.province || !formData.municipality) return [];
+    return philippineLocations[formData.province]?.municipalities[formData.municipality] || [];
+  }, [formData.province, formData.municipality]);
+
+  // Reset dependent fields when parent selection changes
+  const handleProvinceChange = (province) => {
+    setFormData({
+      ...formData,
+      province,
+      municipality: '',
+      barangay: ''
+    });
+  };
+
+  const handleMunicipalityChange = (municipality) => {
+    setFormData({
+      ...formData,
+      municipality,
+      barangay: ''
+    });
+  };
 
   const steps = [
     { number: 1, title: 'Personal Info', icon: User },
@@ -64,6 +214,7 @@ export default function Register({ onSwitchToLogin }) {
         if (!formData.first_name) newErrors.first_name = 'First name is required';
         if (!formData.last_name) newErrors.last_name = 'Last name is required';
         if (!formData.sex) newErrors.sex = 'Sex is required';
+        if (!formData.patient_type) newErrors.patient_type = 'Patient type is required';
         if (!formData.birth_date) newErrors.birth_date = 'Birth date is required';
         break;
       
@@ -77,10 +228,13 @@ export default function Register({ onSwitchToLogin }) {
           }
         }
         if (!formData.address) newErrors.address = 'Address is required';
+        if (!formData.email) newErrors.email = 'Email is required';
         break;
       
       case 3:
         if (!formData.province) newErrors.province = 'Province is required';
+        if (!formData.municipality) newErrors.municipality = 'Municipality/City is required';
+        if (!formData.barangay) newErrors.barangay = 'Barangay is required';
         if (!formData.district) newErrors.district = 'District is required';
         break;
       
@@ -135,6 +289,11 @@ export default function Register({ onSwitchToLogin }) {
     } catch (error) {
       console.error('Registration error:', error);
       if (error.response?.data?.errors) {
+        Object.values(error.response.data.errors).forEach((messages) => {
+          messages.forEach((msg) => {
+            toast.error(msg);
+          });
+        });
         setErrors(error.response.data.errors);
       } else {
         setErrors({ 
@@ -196,15 +355,31 @@ export default function Register({ onSwitchToLogin }) {
                 {errors.sex && <p className="text-sm text-red-600">{errors.sex}</p>}
               </div>
 
-              <Input
-                label="Birth Date"
-                type="date"
-                value={formData.birth_date}
-                onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
-                error={errors.birth_date}
-                required
-              />
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Patient Type <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={formData.patient_type}
+                  onChange={(e) => setFormData({ ...formData, patient_type: e.target.value })}
+                  className={`w-full px-3 py-3 border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white text-sm sm:text-base ${errors.patient_type ? 'border-red-500' : 'border-gray-300'}`}
+                >
+                  <option value="">Select</option>
+                  <option value="outpatient">OUTPATIENT</option>
+                  <option value="aftercare">AFTERCARE</option>
+                </select>
+                {errors.patient_type && <p className="text-sm text-red-600">{errors.patient_type}</p>}
+              </div>
             </div>
+
+            <Input
+              label="Birth Date"
+              type="date"
+              value={formData.birth_date}
+              onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
+              error={errors.birth_date}
+              required
+            />
           </div>
         );
 
@@ -226,7 +401,7 @@ export default function Register({ onSwitchToLogin }) {
             />
 
             <Input
-              label="Email (Optional)"
+              label="Email (Required)"
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -242,7 +417,7 @@ export default function Register({ onSwitchToLogin }) {
               <textarea
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                placeholder="Enter complete address"
+                placeholder="Enter complete address (House/Unit/Building No., Street)"
                 rows="4"
                 className={`w-full px-3 py-3 border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 text-sm sm:text-base ${errors.address ? 'border-red-500' : 'border-gray-300'}`}
               />
@@ -254,23 +429,42 @@ export default function Register({ onSwitchToLogin }) {
       case 3:
         return (
           <div className="space-y-4">
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Province <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={formData.province}
-                onChange={(e) => setFormData({ ...formData, province: e.target.value })}
-                className={`w-full px-3 py-3 border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white text-sm sm:text-base ${errors.province ? 'border-red-500' : 'border-gray-300'}`}
-              >
-                <option value="">Select Province</option>
-                {provinces.map(province => (
-                  <option key={province} value={province}>{province}</option>
-                ))}
-              </select>
-              {errors.province && <p className="text-sm text-red-600">{errors.province}</p>}
-            </div>
+            {/* Province Searchable Select */}
+            <SearchableSelect
+              label="Province"
+              value={formData.province}
+              onChange={handleProvinceChange}
+              options={provinces}
+              placeholder="Select Province"
+              error={errors.province}
+              required
+            />
 
+            {/* Municipality Searchable Select */}
+            <SearchableSelect
+              label="Municipality/City"
+              value={formData.municipality}
+              onChange={handleMunicipalityChange}
+              options={municipalities}
+              placeholder={formData.province ? 'Select Municipality/City' : 'Select province first'}
+              disabled={!formData.province}
+              error={errors.municipality}
+              required
+            />
+
+            {/* Barangay Searchable Select */}
+            <SearchableSelect
+              label="Barangay"
+              value={formData.barangay}
+              onChange={(barangay) => setFormData({ ...formData, barangay })}
+              options={barangays}
+              placeholder={formData.municipality ? 'Select Barangay' : 'Select municipality first'}
+              disabled={!formData.municipality}
+              error={errors.barangay}
+              required
+            />
+
+            {/* District Selection */}
             <div className="space-y-1">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 District <span className="text-red-500">*</span>
@@ -292,6 +486,19 @@ export default function Register({ onSwitchToLogin }) {
               </div>
               {errors.district && <p className="text-sm text-red-600">{errors.district}</p>}
             </div>
+
+            {/* Location Summary */}
+            {formData.province && formData.municipality && formData.barangay && (
+              <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+                <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+                  Complete Address:
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {formData.barangay}, {formData.municipality}, {formData.province}
+                  {formData.district && ` - District ${formData.district}`}
+                </p>
+              </div>
+            )}
           </div>
         );
 
@@ -326,9 +533,13 @@ export default function Register({ onSwitchToLogin }) {
               <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Review Your Information</h4>
               <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
                 <p><strong>Name:</strong> {formData.first_name} {formData.middle_initial && formData.middle_initial + '.'} {formData.last_name}</p>
+                <p><strong>Sex:</strong> {formData.sex}</p>
+                <p><strong>Patient Type:</strong> {formData.patient_type?.toUpperCase()}</p>
+                <p><strong>Birth Date:</strong> {formData.birth_date}</p>
                 <p><strong>Contact:</strong> {formData.contact_number}</p>
                 {formData.email && <p><strong>Email:</strong> {formData.email}</p>}
-                <p><strong>Location:</strong> {formData.province}, District {formData.district}</p>
+                <p><strong>Address:</strong> {formData.address}</p>
+                <p><strong>Location:</strong> {formData.barangay}, {formData.municipality}, {formData.province} - District {formData.district}</p>
               </div>
             </div>
           </div>
@@ -359,33 +570,44 @@ export default function Register({ onSwitchToLogin }) {
               const StepIcon = step.icon;
               const isCompleted = currentStep > step.number;
               const isCurrent = currentStep === step.number;
-              
+
               return (
                 <div key={step.number} className="flex items-center flex-1">
                   <div className="flex flex-col items-center flex-1">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                      isCompleted ? 'bg-green-500' : 
-                      isCurrent ? 'bg-blue-600' : 
-                      'bg-gray-300 dark:bg-gray-600'
-                    }`}>
+                    <div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                        isCompleted
+                          ? "bg-green-500"
+                          : isCurrent
+                          ? "bg-blue-600"
+                          : "bg-gray-300 dark:bg-gray-600"
+                      }`}
+                    >
                       {isCompleted ? (
                         <Check className="h-5 w-5 text-white" />
                       ) : (
                         <StepIcon className="h-5 w-5 text-white" />
                       )}
                     </div>
-                    <span className={`text-xs mt-2 hidden sm:block ${
-                      isCurrent ? 'text-blue-600 dark:text-blue-400 font-medium' : 
-                      'text-gray-500 dark:text-gray-400'
-                    }`}>
+                    <span
+                      className={`text-xs mt-2 hidden sm:block ${
+                        isCurrent
+                          ? "text-blue-600 dark:text-blue-400 font-medium"
+                          : "text-gray-500 dark:text-gray-400"
+                      }`}
+                    >
                       {step.title}
                     </span>
                   </div>
-                  
+
                   {index < steps.length - 1 && (
-                    <div className={`h-1 flex-1 mx-2 transition-all ${
-                      isCompleted ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
-                    }`} />
+                    <div
+                      className={`h-1 flex-1 mx-2 transition-all ${
+                        isCompleted
+                          ? "bg-green-500"
+                          : "bg-gray-300 dark:bg-gray-600"
+                      }`}
+                    />
                   )}
                 </div>
               );
@@ -394,13 +616,13 @@ export default function Register({ onSwitchToLogin }) {
 
           {/* Form Content */}
           <form onSubmit={handleSubmit}>
-            <div className="min-h-[320px]">
-              {renderStepContent()}
-            </div>
+            <div className="min-h-[320px]">{renderStepContent()}</div>
 
             {errors.submit && (
               <div className="mt-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
-                <p className="text-sm text-red-600 dark:text-red-400">{errors.submit}</p>
+                <p className="text-sm text-red-600 dark:text-red-400">
+                  {errors.submit}
+                </p>
               </div>
             )}
 
@@ -417,30 +639,26 @@ export default function Register({ onSwitchToLogin }) {
                     Back
                   </Button>
                 )}
+
+                {currentStep == 1 && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={onSwitchToLogin}
+                  >
+                    Cancel
+                  </Button>
+                )}
               </div>
 
               <div className="flex gap-3">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={onSwitchToLogin}
-                >
-                  Cancel
-                </Button>
-                
                 {currentStep < 4 ? (
-                  <Button
-                    type="button"
-                    onClick={handleNext}
-                  >
+                  <Button type="button" onClick={handleNext}>
                     Next
                     <ChevronRight className="h-4 w-4 ml-1 inline" />
                   </Button>
                 ) : (
-                  <Button
-                    type="submit"
-                    loading={loading}
-                  >
+                  <Button type="submit" loading={loading}>
                     Create Account
                   </Button>
                 )}

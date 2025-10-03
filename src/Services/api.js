@@ -429,6 +429,14 @@ async login(credentials) {
     }
   }
 
+    async patch(url, data = {}, config = {}) {
+    try {
+      return await this.client.patch(url, data, config);
+    } catch (error) {
+      throw error;
+    }
+  }
+
   // Generic DELETE method
   async delete(url, config = {}) {
     try {

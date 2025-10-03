@@ -1,10 +1,8 @@
 // App.jsx - Main Application with React Router
-import React, { useState, useEffect, createContext, useContext } from 'react';
+import  { useEffect } from 'react';
 import { Toaster } from 'sonner'
 import { 
   BrowserRouter as Router,
-  Routes,
-  Route,
   Navigate,
   useNavigate,
   useLocation,
@@ -15,6 +13,7 @@ import {
 import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './hooks/useAuth';
 import { usePusherNotifications } from './hooks/usePusherNotifications';
+import { NotificationProvider } from './context/NotificationContext';
 import pusherService from './Services/pusher';
 
 
@@ -106,7 +105,7 @@ const RegisterWithRouter = () => {
  const OTPVerificationWithRouter = () => {
   const navigate = useNavigate();
   const { phoneNumber } = useParams();
-  const { verifyOTP, pendingVerification } = useAuth();
+  const { pendingVerification } = useAuth();
 
   const actualPhoneNumber = decodeURIComponent(phoneNumber || pendingVerification || '');
 
@@ -334,9 +333,12 @@ const router = createBrowserRouter(routes);
 const App = () => {
   return (
     <AuthProvider>
+      <NotificationProvider>
     <Toaster richColors position="top-right" closeButton/>
       <RouterProvider router={router} />
+      </NotificationProvider>
     </AuthProvider>
+    
   );
 };
 

@@ -22,7 +22,7 @@ import ErrorAlert from './components/doctor/ErrorAlert';
 import PatientsModal from './components/doctor/PatientsModal';
 import DashboardStats from './components/doctor/DashboardStats';
 import QuickActions from './components/doctor/QuickActions';
-import LoadingSpinner from './components/doctor/LoadingSpinner';
+import LoadingSpinner from './components/doctor/LoadingSpinner';import NotificationBell from './components/NotificationBell';
 
 
 const AppointmentModal = ({ isOpen, onClose, appointment, patients, onSave, isLoading }) => {
@@ -839,7 +839,7 @@ const handleSaveAppointment = async (appointmentData) => {
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">Doctor Portal</h1>
             <div className="flex items-center space-x-3">
               <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-                <Bell className="h-5 w-5" />
+               <NotificationBell/>
               </button>
               <button 
                 onClick={onLogout}
