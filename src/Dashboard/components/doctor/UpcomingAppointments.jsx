@@ -1,5 +1,5 @@
 import moment from 'moment';
-
+import { formatText } from '../../../utils/navigation';
 
 const UpcomingAppointments = ({ appointments, loading }) => {
   const today = new Date();
@@ -29,7 +29,7 @@ const UpcomingAppointments = ({ appointments, loading }) => {
                 }`}></div>
                 <div>
                   <p className="font-medium text-gray-900">{apt.resource?.patient}</p>
-                  <p className="text-sm text-gray-600">{apt.resource?.agenda}</p>
+                  <p className="text-sm text-gray-600">{formatText(apt.resource?.agenda)}</p>
                   {apt.resource?.priority && apt.resource.priority !== 'normal' && (
                     <span className={`inline-block text-xs px-2 py-1 rounded mt-1 ${
                       apt.resource.priority === 'urgent' ? 'bg-red-100 text-red-700' :

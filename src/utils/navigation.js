@@ -17,6 +17,13 @@ export const getDashboardPath = (role) => {
   }
 };
 
+export const formatText = (text) => {
+  return text
+    .split('_') // split by underscore
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1)) // capitalize each word
+    .join(' '); // join with space
+}
+
 export const isPublicRoute = (pathname) => {
   const publicRoutes = ['/login', '/register', '/verify', '/unauthorized', '/404'];
   return publicRoutes.some(route => pathname.startsWith(route));

@@ -6,7 +6,7 @@ import {
   Activity,
   Users,
   LogOut,
-  Bell,
+   MessageSquare,
   Clock,
   MapPin,
   AlertCircle
@@ -15,9 +15,11 @@ import 'react-big-calendar/lib/css/react-big-calendar.css';
 import apiService from '../Services/api';
 import { toast } from 'sonner';
 import ProfileTab from "./components/patient/ProfileTab";
-import DoctorsTab from "./components/patient/DoctorsTab";
 import AppointmentsTab from "./AppointmentsTab";
 import NotificationBell from "./components/NotificationBell";
+import ChatTab from "./components/patient/ChatTab";
+import { formatText } from "../utils/navigation";
+import MotivationalQuotes from "./components/patient/MotivationalQuotes";
 
 // Loading Spinner Component
 const LoadingSpinner = ({ message = "Loading..." }) => (
@@ -47,7 +49,7 @@ const PatientAppointmentDetailsModal = ({ isOpen, onClose, appointment }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-20 backdrop-blur-sm flex items-center justify-center z-50">
+    <div className="fixed inset-0  bg-opacity-20 backdrop-blur-sm flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">Appointment Details</h2>
@@ -107,7 +109,7 @@ const PatientAppointmentDetailsModal = ({ isOpen, onClose, appointment }) => {
           )}
 
           <div className="pt-2 border-t">
-            <p className="text-sm text-gray-600"><strong>Type:</strong> {appointment.resource?.agenda || 'Consultation'}</p>
+            <p className="text-sm text-gray-600"><strong>Type:</strong> {formatText(appointment.resource?.agenda) || 'Consultation'}</p>
           </div>
 
           {appointment.resource?.details && (
@@ -142,7 +144,7 @@ export default function PatientDashboard({ user, onLogout }) {
   const tabs = [
     { icon: Activity, label: 'Overview' },
     { icon: Calendar, label: 'Appointments' },
-    { icon: Users, label: 'Doctors' },
+    { icon: MessageSquare , label: 'Chat',}, 
     { icon: User, label: 'Profile' }
   ];
 
@@ -160,7 +162,7 @@ export default function PatientDashboard({ user, onLogout }) {
 
       return {
         id: appointment.id,
-        title: `${appointment.doctor || 'Dr. Unknown'} - ${appointment.agenda || 'Appointment'}`,
+        title: `${appointment.doctor || 'Dr. Unknown'} - ${formatText(appointment.agenda) || 'Appointment'}`,
         start,
         end,
         resource: {
@@ -168,7 +170,7 @@ export default function PatientDashboard({ user, onLogout }) {
           doctor: appointment.doctor,
           specialization: appointment.specialization,
           status: appointment.status,
-          agenda: appointment.agenda,
+          agenda: formatText(appointment.agenda),
           priority: appointment.priority,
           details: appointment.details,
           location: appointment.location,
@@ -294,7 +296,7 @@ export default function PatientDashboard({ user, onLogout }) {
                   }`}></div>
                   <div className="flex-1">
                     <p className="text-sm font-medium text-gray-900 dark:text-white">
-                      {apt.resource?.doctor} - {apt.resource?.agenda}
+                      {apt.resource?.doctor} - {formatText(apt.resource?.agenda)}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
                       {moment(apt.start).format('h:mm A')}
@@ -306,36 +308,8 @@ export default function PatientDashboard({ user, onLogout }) {
         </div>
       )}
 
-      {/* Recent Activity */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Activity</h3>
-        <div className="space-y-3">
-          {appointments
-            .filter(apt => apt.resource?.status === 'completed')
-            .slice(0, 3)
-            .map(apt => (
-              <div key={apt.id} className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <div className="w-2 h-8 bg-green-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">Appointment completed</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {moment(apt.start).fromNow()} with {apt.resource?.doctor}
-                  </p>
-                </div>
-              </div>
-            ))}
-          
-          {appointments.filter(apt => apt.resource?.status === 'completed').length === 0 && (
-            <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <div className="w-2 h-8 bg-blue-500 rounded-full"></div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900 dark:text-white">Welcome to the patient portal</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Your activity will appear here</p>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+        <MotivationalQuotes/>
+      
     </div>
   );
 
@@ -362,7 +336,7 @@ export default function PatientDashboard({ user, onLogout }) {
         loading={loading}
         />;
       case 2:
-        return <DoctorsTab  appointments={appointments}/>;
+        return <ChatTab user={user} />;  
       case 3:
         return <ProfileTab  user={user}/>;
       default:

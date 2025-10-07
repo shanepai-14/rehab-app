@@ -140,8 +140,50 @@ export const usePusherNotifications = (user) => {
           duration: 10000,
           position: 'top-right',
         });
-      }
+      },
+
+  'message.sent': (data) => {
+        console.log('💬 New message received:', data);
+        
+        // Only show notification if the message is for this user (not sent by them)
+        if (data.receiver_contact_number === user.contact_number) {
+          // Add to notification context
+          addNotification({
+            id: data.id,
+            title: 'New Message',
+            message: `${data.sender_name}: ${data.message.substring(0, 50)}${data.message.length > 50 ? '...' : ''}`,
+            type: 'info',
+            action_url: '/chat',
+            related_type: 'chat',
+            related_id: data.id,
+            is_read: false,
+            created_at: data.created_at
+          });
+          
+          // Show toast notification
+          toast.info(`New message from ${data.sender_name}`, {
+            description: data.message.substring(0, 100),
+            duration: 5000,
+            position: 'top-right',
+            action: {
+              label: 'View',
+              onClick: () => {
+                window.location.href = '/chat';
+              }
+            }
+          });
+        }
+        
+        // If there's a callback for new messages (for live chat updates), call it
+        if (onNewMessage) {
+          onNewMessage(data);
+        }
+      },
+
+      
     });
+
+    
 
     return () => {
       console.log('🧹 Cleaning up Pusher subscription');

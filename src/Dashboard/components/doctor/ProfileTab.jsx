@@ -1,4 +1,4 @@
-// src/Dashboard/components/patient/ProfileTab.jsx
+// src/Dashboard/components/doctor/ProfileTab.jsx
 
 import { useState, useMemo } from 'react';
 import { 
@@ -11,7 +11,10 @@ import {
   MapPin,
   Calendar,
   Loader2,
-  Search
+  Search,
+  Award,
+  Briefcase,
+  LogOut
 } from 'lucide-react';
 import apiService from '../../../Services/api';
 import { toast } from 'sonner';
@@ -21,7 +24,7 @@ const formatDate = (dateString) => {
   if (!dateString) return '';
   return new Date(dateString).toISOString().split('T')[0];
 };
-// Searchable Select Component (same as Register)
+// Searchable Select Component
 const SearchableSelect = ({ 
   label, 
   value, 
@@ -142,7 +145,7 @@ const SearchableSelect = ({
   );
 };
 
-const ProfileTab = ({ user, onUserUpdate }) => {
+const ProfileTab = ({ user, onUserUpdate, onLogout }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -150,12 +153,43 @@ const ProfileTab = ({ user, onUserUpdate }) => {
     last_name: user?.last_name || '',
     middle_initial: user?.middle_initial || '',
     sex: user?.sex || 'male',
-    birth_date: user?.birth_date || '',
+    birth_date: formatDate(user?.birth_date) || '',
     address: user?.address || '',
     province: user?.province || '',
     municipality: user?.municipality || '',
-    barangay: user?.barangay || ''
+    barangay: user?.barangay || '',
+    license_number: user?.license_number || '',
+    specialization: user?.specialization || ''
   });
+
+  // Medical Specializations
+  const specializations = [
+    'General Medicine',
+    'Internal Medicine',
+    'Pediatrics',
+    'Obstetrics and Gynecology',
+    'Surgery',
+    'Orthopedics',
+    'Cardiology',
+    'Dermatology',
+    'Neurology',
+    'Psychiatry',
+    'Radiology',
+    'Anesthesiology',
+    'Ophthalmology',
+    'ENT (Otorhinolaryngology)',
+    'Urology',
+    'Nephrology',
+    'Pulmonology',
+    'Gastroenterology',
+    'Endocrinology',
+    'Oncology',
+    'Pathology',
+    'Emergency Medicine',
+    'Family Medicine',
+    'Infectious Disease',
+    'Rheumatology'
+  ].sort();
 
   // Get available provinces
   const provinces = Object.keys(philippineLocations);
@@ -236,7 +270,9 @@ const ProfileTab = ({ user, onUserUpdate }) => {
       address: user?.address || '',
       province: user?.province || '',
       municipality: user?.municipality || '',
-      barangay: user?.barangay || ''
+      barangay: user?.barangay || '',
+      license_number: user?.license_number || '',
+      specialization: user?.specialization || ''
     });
     setIsEditing(false);
   };
@@ -256,7 +292,7 @@ const ProfileTab = ({ user, onUserUpdate }) => {
   return (
     <div className="space-y-6 pb-20">
       {/* Profile Header Card */}
-      <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg">
+      <div className="bg-gradient-to-r from-green-500 to-blue-600 rounded-xl p-6 text-white shadow-lg">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center ring-4 ring-white/30">
@@ -264,16 +300,16 @@ const ProfileTab = ({ user, onUserUpdate }) => {
             </div>
             <div>
               <h2 className="text-2xl font-bold">
-                {user?.first_name} {user?.middle_initial && `${user.middle_initial}.`} {user?.last_name}
+                Dr. {user?.first_name} {user?.middle_initial && `${user.middle_initial}.`} {user?.last_name}
               </h2>
-              <p className="text-blue-100">Patient ID: #{user?.id}</p>
+              <p className="text-blue-100">{user?.specialization || 'Not provided'}</p>
               <p className="text-blue-100 text-sm">District {user?.district}</p>
             </div>
           </div>
           {!isEditing && (
             <button
               onClick={() => setIsEditing(true)}
-              className="px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition-colors flex items-center space-x-2 font-medium"
+              className="px-4 py-2 bg-white text-green-600 rounded-lg hover:bg-blue-50 transition-colors flex items-center space-x-2 font-medium"
             >
               <Edit2 className="w-4 h-4" />
               <span>Edit Profile</span>
@@ -331,7 +367,7 @@ const ProfileTab = ({ user, onUserUpdate }) => {
                 <div>
                   <label className="flex items-center text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
                     <MapPin className="w-4 h-4 mr-2" />
-                    District
+                    Assigned District
                   </label>
                   <input
                     type="text"
@@ -340,6 +376,61 @@ const ProfileTab = ({ user, onUserUpdate }) => {
                     className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-500 cursor-not-allowed"
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* Professional Information */}
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 space-y-4 border border-blue-200 dark:border-blue-800">
+              <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-3 flex items-center">
+                <Briefcase className="w-4 h-4 mr-2" />
+                Professional Information
+              </h4>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <Award className="w-4 h-4 mr-2" />
+                    License Number *
+                  </label>
+                  <input
+                    type="text"
+                    name="license_number"
+                    value={formData.license_number}
+                    onChange={handleInputChange}
+                    disabled={!isEditing || loading}
+                    required
+                    placeholder="e.g., 0123456"
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
+                      isEditing ? 'border-gray-300 dark:border-gray-600' : 'bg-gray-50 dark:bg-gray-800 border-gray-200 cursor-not-allowed'
+                    }`}
+                  />
+                </div>
+
+                {/* Specialization Searchable Select */}
+                {isEditing ? (
+                  <SearchableSelect
+                    label="Specialization"
+                    value={formData.specialization}
+                    onChange={(specialization) => setFormData(prev => ({ ...prev, specialization }))}
+                    options={specializations}
+                    placeholder="Select Specialization"
+                    disabled={loading}
+                    required
+                  />
+                ) : (
+                  <div>
+                    <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <Briefcase className="w-4 h-4 mr-2" />
+                      Specialization *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.specialization}
+                      disabled
+                      className="w-full px-4 py-2 border rounded-lg bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 cursor-not-allowed dark:text-white"
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
@@ -427,7 +518,7 @@ const ProfileTab = ({ user, onUserUpdate }) => {
                 <input
                   type="date"
                   name="birth_date"
-                  value={formatDate(formData.birth_date)}
+                  value={formData.birth_date}
                   onChange={handleInputChange}
                   disabled={!isEditing || loading}
                   required
@@ -587,26 +678,28 @@ const ProfileTab = ({ user, onUserUpdate }) => {
         </form>
       </div>
 
-      {/* Additional Info Card */}
+      {/* Professional Summary Card */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Account Status
+          Professional Summary
         </h3>
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-gray-600 dark:text-gray-400">Verification Status</span>
-            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-              user?.is_verified 
-                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
-                : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-            }`}>
-              {user?.is_verified ? 'Verified' : 'Pending'}
+            <span className="text-gray-600 dark:text-gray-400">License Number</span>
+            <span className="font-medium text-gray-900 dark:text-white">
+              {user?.license_number || 'Not provided'}
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-gray-600 dark:text-gray-400">Patient Type</span>
-            <span className="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 capitalize">
-              {user?.patient_type || 'Regular'}
+            <span className="text-gray-600 dark:text-gray-400">Specialization</span>
+            <span className="font-medium text-gray-900 dark:text-white">
+              {user?.specialization || 'Not provided'}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-gray-600 dark:text-gray-400">Assigned District</span>
+            <span className="font-medium text-gray-900 dark:text-white">
+              District {user?.district}
             </span>
           </div>
           <div className="flex items-center justify-between">
@@ -617,6 +710,19 @@ const ProfileTab = ({ user, onUserUpdate }) => {
           </div>
         </div>
       </div>
+
+      {/* Logout Button */}
+      {onLogout && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+          <button
+            onClick={onLogout}
+            className="w-full px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium flex items-center justify-center space-x-2"
+          >
+            <LogOut className="w-5 h-5" />
+            <span>Logout</span>
+                    </button>
+        </div>
+      )}
     </div>
   );
 };
