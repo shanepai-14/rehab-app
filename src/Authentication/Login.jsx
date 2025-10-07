@@ -68,7 +68,7 @@ const handleSubmit = async (e) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4 py-8">
+    <div className="min-h-screen  dark:bg-gray-900 flex items-center justify-center px-4 py-8">
       <div className="max-w-md w-full space-y-6">
         {/* Header */}
         <div className="text-center">
@@ -79,7 +79,7 @@ const handleSubmit = async (e) => {
               className="object-contain" 
             />
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-gray-600 mt-3 dark:text-gray-400">
             Sign in to your account to continue
           </p>
         </div>
