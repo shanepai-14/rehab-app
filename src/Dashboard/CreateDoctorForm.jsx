@@ -167,12 +167,6 @@ export default function CreateDoctorForm({ onBack }) {
   const [apiError, setApiError] = useState('');
   const [createdDoctor, setCreatedDoctor] = useState(null);
 
-  const steps = [
-    { number: 1, title: 'Personal Info', icon: User },
-    { number: 2, title: 'Contact & Address', icon: MapPin },
-    { number: 3, title: 'Account & Professional', icon: Briefcase }
-  ];
-
   // Get available provinces
   const provinces = Object.keys(philippineLocations);
 
@@ -188,29 +182,11 @@ export default function CreateDoctorForm({ onBack }) {
     return philippineLocations[formData.province]?.municipalities[formData.municipality] || [];
   }, [formData.province, formData.municipality]);
 
-  // Reset dependent fields when parent selection changes
-  const handleProvinceChange = (province) => {
-    setFormData({
-      ...formData,
-      province,
-      municipality: '',
-      barangay: ''
-    });
-    if (errors.province) {
-      setErrors(prev => ({ ...prev, province: '' }));
-    }
-  };
-
-  const handleMunicipalityChange = (municipality) => {
-    setFormData({
-      ...formData,
-      municipality,
-      barangay: ''
-    });
-    if (errors.municipality) {
-      setErrors(prev => ({ ...prev, municipality: '' }));
-    }
-  };
+  const steps = [
+    { number: 1, title: 'Personal Info', icon: User },
+    { number: 2, title: 'Contact & Address', icon: MapPin },
+    { number: 3, title: 'Account & Professional', icon: Briefcase }
+  ];
 
   const validateStep = (step) => {
     const newErrors = {};
@@ -225,11 +201,11 @@ export default function CreateDoctorForm({ onBack }) {
       }
     }
 
-    if (step === 2) {
+if (step === 2) {
       if (!formData.address.trim()) newErrors.address = 'Address is required';
-      if (!formData.province) newErrors.province = 'Province is required';
-      if (!formData.municipality) newErrors.municipality = 'Municipality is required';
-      if (!formData.barangay) newErrors.barangay = 'Barangay is required';
+      if (!formData.province.trim()) newErrors.province = 'Province is required';
+      if (!formData.municipality.trim()) newErrors.municipality = 'Municipality/City is required';
+      if (!formData.barangay.trim()) newErrors.barangay = 'Barangay is required';
       if (!formData.district) newErrors.district = 'District is required';
       if (!formData.contact_number.trim()) {
         newErrors.contact_number = 'Contact number is required';
@@ -310,9 +286,12 @@ export default function CreateDoctorForm({ onBack }) {
       
       if (error.response?.status === 422 && error.response?.data?.errors) {
         setErrors(error.response.data.errors);
+        
         Object.entries(error.response.data.errors).forEach(([field, messages]) => {
           if (Array.isArray(messages)) {
-            messages.forEach(message => toast.error(message));
+            messages.forEach(message => {
+              toast.error(message);
+            });
           } else {
             toast.error(messages);
           }
@@ -342,10 +321,41 @@ export default function CreateDoctorForm({ onBack }) {
     }
   };
 
+  // Reset dependent fields when parent selection changes
+  const handleProvinceChange = (province) => {
+    setFormData(prev => ({
+      ...prev,
+      province,
+      municipality: '',
+      barangay: ''
+    }));
+    if (errors.province) {
+      setErrors(prev => ({ ...prev, province: '' }));
+    }
+  };
+
+  const handleMunicipalityChange = (municipality) => {
+    setFormData(prev => ({
+      ...prev,
+      municipality,
+      barangay: ''
+    }));
+    if (errors.municipality) {
+      setErrors(prev => ({ ...prev, municipality: '' }));
+    }
+  };
+
+  const handleBarangayChange = (barangay) => {
+    setFormData(prev => ({ ...prev, barangay }));
+    if (errors.barangay) {
+      setErrors(prev => ({ ...prev, barangay: '' }));
+    }
+  };
+
   if (success) {
     return (
-      <div className="fixed inset-0 bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto">
-        <div className="max-w-md w-full text-center shadow-sm bg-white space-y-6">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4">
+        <div className="max-w-md w-full text-center space-y-6">
           <div className="mx-auto h-16 w-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
             <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
           </div>
@@ -371,26 +381,26 @@ export default function CreateDoctorForm({ onBack }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="max-w-3xl w-full bg-white dark:bg-gray-800 rounded-2xl shadow-xl my-8">
-        <div className="p-6 space-y-6">
-          {/* Header */}
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={onBack}
-              className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-              disabled={loading}
-            >
-              <ChevronLeft className="h-6 w-6" />
-            </button>
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Create Doctor Account</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Step {currentStep} of {steps.length}</p>
-            </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4">
+      <div className="max-w-3xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={onBack}
+            className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            disabled={loading}
+          >
+            ←
+          </button>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Create Doctor Account</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Step {currentStep} of {steps.length}</p>
           </div>
+        </div>
 
-          {/* Progress Steps */}
-          <div className="flex items-center justify-between">
+        {/* Progress Steps */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+          <div className="flex items-center justify-between mb-8">
             {steps.map((step, index) => {
               const StepIcon = step.icon;
               const isActive = currentStep === step.number;
@@ -426,7 +436,7 @@ export default function CreateDoctorForm({ onBack }) {
 
           {/* API Error Alert */}
           {apiError && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 flex items-center space-x-3">
+            <div className="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 flex items-center space-x-3">
               <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0" />
               <p className="text-red-800 dark:text-red-200">{apiError}</p>
             </div>
@@ -531,6 +541,7 @@ export default function CreateDoctorForm({ onBack }) {
                 {errors.address && <p className="text-sm text-red-600">{errors.address}</p>}
               </div>
 
+              {/* Province Searchable Select */}
               <SearchableSelect
                 label="Province"
                 value={formData.province}
@@ -541,6 +552,7 @@ export default function CreateDoctorForm({ onBack }) {
                 required
               />
 
+              {/* Municipality Searchable Select */}
               <SearchableSelect
                 label="Municipality/City"
                 value={formData.municipality}
@@ -552,10 +564,11 @@ export default function CreateDoctorForm({ onBack }) {
                 required
               />
 
+              {/* Barangay Searchable Select */}
               <SearchableSelect
                 label="Barangay"
                 value={formData.barangay}
-                onChange={(barangay) => handleInputChange('barangay', barangay)}
+                onChange={handleBarangayChange}
                 options={barangays}
                 placeholder={formData.municipality ? 'Select Barangay' : 'Select municipality first'}
                 disabled={!formData.municipality}
@@ -592,7 +605,6 @@ export default function CreateDoctorForm({ onBack }) {
                     Complete Address:
                   </p>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {formData.address}<br />
                     {formData.barangay}, {formData.municipality}, {formData.province}
                     {formData.district && ` - District ${formData.district}`}
                   </p>
@@ -666,11 +678,27 @@ export default function CreateDoctorForm({ onBack }) {
                   />
                 </div>
               </div>
+
+              {/* Review Summary */}
+              <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+                <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Review Doctor Information</h4>
+                <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                  <p><strong>Name:</strong> {formData.first_name} {formData.middle_initial && formData.middle_initial + '.'} {formData.last_name}</p>
+                  <p><strong>Sex:</strong> {formData.sex}</p>
+                  <p><strong>Birth Date:</strong> {formData.birth_date}</p>
+                  <p><strong>Contact:</strong> {formData.contact_number}</p>
+                  <p><strong>Email:</strong> {formData.email}</p>
+                  <p><strong>Address:</strong> {formData.address}</p>
+                  <p><strong>Location:</strong> {formData.barangay}, {formData.municipality}, {formData.province} - District {formData.district}</p>
+                  {formData.specialization && <p><strong>Specialization:</strong> {formData.specialization}</p>}
+                  {formData.license_number && <p><strong>License:</strong> {formData.license_number}</p>}
+                </div>
+              </div>
             </div>
           )}
 
           {/* Navigation Buttons */}
-          <div className="flex gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex gap-3 mt-8">
             {currentStep > 1 && (
               <Button 
                 variant="secondary"
