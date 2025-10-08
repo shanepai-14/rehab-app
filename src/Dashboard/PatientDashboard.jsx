@@ -20,6 +20,7 @@ import NotificationBell from "./components/NotificationBell";
 import ChatTab from "./components/patient/ChatTab";
 import { formatText } from "../utils/navigation";
 import MotivationalQuotes from "./components/patient/MotivationalQuotes";
+import { usePusherNotifications } from '../hooks/usePusherNotifications';
 
 // Loading Spinner Component
 const LoadingSpinner = ({ message = "Loading..." }) => (
@@ -140,13 +141,35 @@ export default function PatientDashboard({ user, onLogout }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [dashboardData, setDashboardData] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const tabs = [
     { icon: Activity, label: 'Overview' },
     { icon: Calendar, label: 'Appointments' },
-    { icon: MessageSquare , label: 'Chat',}, 
+     { label: 'Chat', icon: MessageSquare, badge: unreadCount },
     { icon: User, label: 'Profile' }
   ];
+
+    const handleNewMessage = useCallback((data) => {
+  // Only increment if message is for this user (not sent by them)
+  if (data.receiver_contact_number === user.contact_number) {
+    setUnreadCount(prev => prev + 1);
+  }
+}, [user.contact_number]);
+
+// Use the hook with the callback
+usePusherNotifications(user, handleNewMessage);
+
+  const loadUnreadCount = async () => {
+  try {
+    const response = await apiService.get('/chat/unread-count');
+    if (response.data.success) {
+      setUnreadCount(response.data.data.unread_count || 0);
+    }
+  } catch (error) {
+    console.error('Error loading unread count:', error);
+  }
+};
 
   // Transform patient appointments to calendar format
   const transformAppointmentsToCalendar = (appointmentsData) => {
@@ -222,6 +245,7 @@ export default function PatientDashboard({ user, onLogout }) {
 
   useEffect(() => {
     loadAppointments();
+    loadUnreadCount();
   }, []);
 
   // Handle appointment selection from calendar
@@ -385,16 +409,23 @@ export default function PatientDashboard({ user, onLogout }) {
             const Icon = tab.icon;
             const isActive = activeTab === index;
             return (
-              <button
+       <button
                 key={index}
                 onClick={() => setActiveTab(index)}
-                className={`flex flex-col items-center py-2 px-4 rounded-lg transition-colors ${
+                className={`flex flex-col items-center py-2 px-4 rounded-lg transition-colors relative ${
                   isActive 
-                    ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20' 
-                    : 'text-gray-600 dark:text-gray-400'
+                    ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400' 
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
                 }`}
               >
-                <Icon className="h-5 w-5 mb-1" />
+                <div className="relative">
+                  <Icon className="h-5 w-5 mb-1" />
+                  {tab.badge > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                      {tab.badge > 9 ? '9+' : tab.badge}
+                    </span>
+                  )}
+                </div>
                 <span className="text-xs font-medium">{tab.label}</span>
               </button>
             );
