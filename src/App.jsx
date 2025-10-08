@@ -25,6 +25,9 @@ import Login from './Authentication/Login';
 import OTPVerification from './Authentication/OTPVerification';
 import Register from './Authentication/Register';
 import { getDashboardPath } from './utils/navigation';
+import NewPassword from './Authentication/NewPassword';
+import ResetPasswordOTP from './Authentication/ResetPasswordOTP';
+import ForgotPassword from './Authentication/ForgotPassword';
 
 
 // ==================== ROUTE PROTECTION ====================
@@ -269,6 +272,30 @@ const routes = [
     element: (
       <PublicRoute>
         <RegisterWithRouter />
+      </PublicRoute>
+    )
+  },
+    {
+    path: "/forgot-password",
+    element: (
+      <PublicRoute>
+        <ForgotPassword />
+      </PublicRoute>
+    )
+  },
+      {
+    path: "/reset-password/verify/:phoneNumber",
+    element: (
+      <PublicRoute>
+        <ResetPasswordOTP />
+      </PublicRoute>
+    )
+  },
+        {
+    path: "/reset-password/new",
+    element: (
+      <PublicRoute>
+        <NewPassword />
       </PublicRoute>
     )
   },
