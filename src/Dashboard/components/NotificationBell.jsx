@@ -219,13 +219,13 @@ const NotificationBell = () => {
           </div>
 
           {/* Footer */}
-          {notifications.length > 0 && (
+          {/* {notifications.length > 0 && (
             <div className="p-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750">
               <button className="w-full text-center text-sm font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-2">
                 See all notifications
               </button>
             </div>
-          )}
+          )} */}
         </div>
       )}
     </div>

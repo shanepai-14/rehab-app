@@ -68,24 +68,13 @@ usePusherNotifications(user, handleNewMessage);
       setError(null);
 
       // Get dashboard data using apiService
-      const [dashboardResponse, appointmentsResponse, patientsResponse] = await Promise.all([
-        apiService.getDoctorDashboard(),
+      const [appointmentsResponse, patientsResponse] = await Promise.all([
         apiService.get('/appointments'),
         apiService.getDoctorPatients()
       ]);
 
-      // Set dashboard stats
-      if (dashboardResponse?.data) {
-        const stats = dashboardResponse.data.data.stats || {};
-        setDashboardData({
-          stats: {
-            totalAppointments: stats.total_appointments || 0,
-            todayAppointments: stats.today_appointments || 0,
-            pendingAppointments: stats.upcoming_appointments || 0,
-            completedAppointments: stats.completed_appointments || 0
-          }
-        });
-      }
+      loadDashboardStats();
+
 
       // Transform appointments with multi-patient support
       if (appointmentsResponse?.data?.data) {
@@ -164,6 +153,28 @@ usePusherNotifications(user, handleNewMessage);
     }
   };
 
+  const loadDashboardStats = async () => {
+  try {
+    const response = await apiService.getDoctorDashboard()
+    if (response?.data?.success) {
+        const stats = response.data.data.stats || {};
+        setDashboardData({
+          stats: {
+            totalAppointments: stats.total_appointments || 0,
+            todayAppointments: stats.today_appointments || 0,
+            pendingAppointments: stats.upcoming_appointments || 0,
+            completedAppointments: stats.completed_appointments || 0
+          }
+        });
+
+    }
+  } catch (error) {
+    console.error('Error loading dashboard stats:', error);
+    // Optionally show a toast for errors
+    // toast.error('Failed to load dashboard stats');
+  }
+};
+
   const loadUnreadCount = async () => {
   try {
     const response = await apiService.get('/chat/unread-count');
@@ -233,131 +244,171 @@ usePusherNotifications(user, handleNewMessage);
   };
 
   // Handle status updates
-  const handleSaveAppointment = async (appointmentData) => {
-    try {
-      if (editingAppointment?.id) {
-        // Update existing appointment with multiple patients
-        const updateData = {
-          patient_ids: appointmentData.patientIds,
-          appointment_date: moment(appointmentData.start).format('YYYY-MM-DD'),
-          appointment_time: moment(appointmentData.start).format('HH:mm'),
+ const handleSaveAppointment = async (appointmentData) => {
+  try {
+    if (editingAppointment?.id) {
+      // Update existing appointment with multiple patients
+      const updateData = {
+        patient_ids: appointmentData.patientIds,
+        appointment_date: moment(appointmentData.start).format('YYYY-MM-DD'),
+        appointment_time: moment(appointmentData.start).format('HH:mm'),
+        agenda: appointmentData.agenda,
+        priority: appointmentData.priority,
+        details: appointmentData.details,
+        duration: appointmentData.duration,
+        status: appointmentData.status,
+      };
+
+      const response = await apiService.put(
+        `/appointments/${editingAppointment.id}`, 
+        updateData
+      );
+
+      loadDashboardStats();
+
+      if (!response.data.success) {
+        // Handle validation errors
+        if (response.data.errors) {
+          const errorMessages = Object.entries(response.data.errors)
+            .map(([field, messages]) => {
+              const fieldName = field.charAt(0).toUpperCase() + field.slice(1).replace(/_/g, ' ');
+              return `${fieldName}: ${messages.join(', ')}`;
+            })
+            .join('\n');
+          
+          toast.error(errorMessages || response.data.message);
+        } else {
+          toast.error(response.data.message || 'Failed to update appointment');
+        }
+        return;
+      }
+
+      toast.success('Appointment updated successfully');
+
+      // Update local state with multiple patients
+      setAppointments(prev => 
+        prev.map(apt => {
+          if (apt.id === editingAppointment.id) {
+            const patientNames = appointmentData.patients
+              .map(p => p.first_name)
+              .join(', ');
+            
+            return {
+              ...apt,
+              title: `${patientNames} - ${formatText(appointmentData.agenda)}`,
+              start: appointmentData.start,
+              end: appointmentData.end,
+              resource: {
+                ...apt.resource,
+                patients: appointmentData.patients,
+                patientIds: appointmentData.patientIds,
+                patient: patientNames,
+                agenda: appointmentData.agenda,
+                priority: appointmentData.priority,
+                details: appointmentData.details,
+                duration: appointmentData.duration,
+                status: appointmentData.status
+              }
+            };
+          }
+          return apt;
+        })
+      );
+    } else {
+      // Create new appointment with multiple patients
+      const createData = {
+        patient_ids: appointmentData.patientIds,
+        appointment_date: moment(appointmentData.start).format('YYYY-MM-DD'),
+        appointment_time: moment(appointmentData.start).format('HH:mm'),
+        agenda: appointmentData.agenda,
+        priority: appointmentData.priority || 'normal',
+        details: appointmentData.details || '',
+        duration: appointmentData.duration || 30,
+        status: 'scheduled'
+      };
+
+      const response = await apiService.post('/appointments', createData);
+
+        loadDashboardStats();
+
+      if (!response.data.success) {
+        // Handle validation errors
+        if (response.data.errors) {
+          const errorMessages = Object.entries(response.data.errors)
+            .map(([field, messages]) => {
+              const fieldName = field.charAt(0).toUpperCase() + field.slice(1).replace(/_/g, ' ');
+              return `${fieldName}: ${messages.join(', ')}`;
+            })
+            .join('\n');
+          
+          toast.error(errorMessages || response.data.message);
+        }
+        // Handle conflict or validation errors
+        else if (response.data.details?.conflict_type === 'doctor') {
+          toast.error(
+            `Schedule conflict: Another appointment exists at ${response.data.details.existing_appointment?.time}`
+          );
+        } else if (response.data.details?.conflict_type === 'patient') {
+          toast.error(
+            `Patient ${response.data.details.patient_name} has a conflicting appointment at ${response.data.details.existing_appointment?.time}`
+          );
+        } else {
+          toast.error(response.data.message || 'Failed to create appointment');
+        }
+        return;
+      }
+
+      toast.success(
+        `Appointment created successfully with ${appointmentData.patientIds.length} patient(s)`
+      );
+
+      const newAppointment = response.data.data.appointment;
+      const patientNames = appointmentData.patients
+        .map(p => p.first_name)
+        .join(', ');
+      
+      const calendarEvent = {
+        id: newAppointment.id,
+        title: `${patientNames} - ${formatText(appointmentData.agenda)}`,
+        start: appointmentData.start,
+        end: appointmentData.end,
+        resource: {
+          patients: appointmentData.patients,
+          patientIds: appointmentData.patientIds,
+          patient: patientNames,
           agenda: appointmentData.agenda,
           priority: appointmentData.priority,
           details: appointmentData.details,
           duration: appointmentData.duration,
-          status: appointmentData.status,
-        };
-
-        const response = await apiService.put(
-          `/appointments/${editingAppointment.id}`, 
-          updateData
-        );
-
-        if (!response.data.success) {
-          toast.error(response.data.message || 'Failed to update appointment');
-          return;
+          status: 'scheduled',
+          phone: appointmentData.patients[0]?.contact_number
         }
+      };
 
-        toast.success('Appointment updated successfully');
-
-        // Update local state with multiple patients
-        setAppointments(prev => 
-          prev.map(apt => {
-            if (apt.id === editingAppointment.id) {
-              const patientNames = appointmentData.patients
-                .map(p => p.first_name)
-                .join(', ');
-              
-              return {
-                ...apt,
-                title: `${patientNames} - ${formatText(appointmentData.agenda)}`,
-                start: appointmentData.start,
-                end: appointmentData.end,
-                resource: {
-                  ...apt.resource,
-                  patients: appointmentData.patients,
-                  patientIds: appointmentData.patientIds,
-                  patient: patientNames,
-                  agenda: appointmentData.agenda,
-                  priority: appointmentData.priority,
-                  details: appointmentData.details,
-                  duration: appointmentData.duration,
-                 status: appointmentData.status
-                }
-              };
-            }
-            return apt;
-          })
-        );
-      } else {
-        // Create new appointment with multiple patients
-        const createData = {
-          patient_ids: appointmentData.patientIds,
-          appointment_date: moment(appointmentData.start).format('YYYY-MM-DD'),
-          appointment_time: moment(appointmentData.start).format('HH:mm'),
-          agenda: appointmentData.agenda,
-          priority: appointmentData.priority || 'normal',
-          details: appointmentData.details || '',
-          duration: appointmentData.duration || 30,
-          status: 'scheduled'
-        };
-
-        const response = await apiService.post('/appointments', createData);
-
-        if (!response.data.success) {
-          // Handle conflict or validation errors
-          if (response.data.details?.conflict_type === 'doctor') {
-            toast.error(
-              `Schedule conflict: Another appointment exists at ${response.data.details.existing_appointment?.time}`
-            );
-          } else if (response.data.details?.conflict_type === 'patient') {
-            toast.error(
-              `Patient ${response.data.details.patient_name} has a conflicting appointment at ${response.data.details.existing_appointment?.time}`
-            );
-          } else {
-            toast.error(response.data.message || 'Failed to create appointment');
-          }
-          return;
-        }
-
-        toast.success(
-          `Appointment created successfully with ${appointmentData.patientIds.length} patient(s)`
-        );
-
-        const newAppointment = response.data.data.appointment;
-        const patientNames = appointmentData.patients
-          .map(p => p.first_name)
-          .join(', ');
-        
-        const calendarEvent = {
-          id: newAppointment.id,
-          title: `${patientNames} - ${formatText(appointmentData.agenda)}`,
-          start: appointmentData.start,
-          end: appointmentData.end,
-          resource: {
-            patients: appointmentData.patients,
-            patientIds: appointmentData.patientIds,
-            patient: patientNames,
-            agenda: appointmentData.agenda,
-            priority: appointmentData.priority,
-            details: appointmentData.details,
-            duration: appointmentData.duration,
-            status: 'scheduled',
-            phone: appointmentData.patients[0]?.contact_number
-          }
-        };
-
-        setAppointments(prev => [...prev, calendarEvent]);
-      }
-
-      setIsEditModalOpen(false);
-      setEditingAppointment(null);
-
-    } catch (error) {
-      console.error('Error saving appointment:', error);
-      toast.error('An error occurred while saving the appointment');
+      setAppointments(prev => [...prev, calendarEvent]);
     }
-  };
+
+    setIsEditModalOpen(false);
+    setEditingAppointment(null);
+
+  } catch (error) {
+    console.error('Error saving appointment:', error);
+    
+    // Handle validation errors from catch block (if API throws)
+    if (error.response?.data?.errors) {
+      const errorMessages = Object.entries(error.response.data.errors)
+        .map(([field, messages]) => {
+          const fieldName = field.charAt(0).toUpperCase() + field.slice(1).replace(/_/g, ' ');
+          return `${fieldName}: ${messages.join(', ')}`;
+        })
+        .join('\n');
+      
+      toast.error(errorMessages);
+    } else {
+      toast.error(error.response?.data?.message || 'An error occurred while saving the appointment');
+    }
+  }
+};
   
   const handleStatusUpdate = async (appointmentId, newStatus) => {
     try {
@@ -382,18 +433,8 @@ usePusherNotifications(user, handleNewMessage);
         }));
       }
       
-      // Update dashboard stats based on status change
-      setDashboardData(prev => {
-        if (!prev) return prev;
-        
-        const newStats = { ...prev.stats };
-        if (newStatus === 'completed') {
-          newStats.completedAppointments += 1;
-        } else if (newStatus === 'confirmed') {
-          newStats.pendingAppointments = Math.max(0, newStats.pendingAppointments - 1);
-        }
-        return { ...prev, stats: newStats };
-      });
+   
+
 
       setIsDetailsModalOpen(false);
     } catch (error) {
