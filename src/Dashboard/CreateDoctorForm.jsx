@@ -354,8 +354,8 @@ if (step === 2) {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4">
-        <div className="max-w-md w-full text-center space-y-6">
+      <div className="fixed inset-0 bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div className="max-w-md w-full shadow-xl bg-white text-center space-y-6">
           <div className="mx-auto h-16 w-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
             <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
           </div>
@@ -381,8 +381,8 @@ if (step === 2) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4">
-      <div className="max-w-3xl mx-auto space-y-6">
+    <div className="fixed inset-0  bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto">
+      <div className="max-w-3xl w-full bg-white dark:bg-gray-800 rounded-2xl shadow-xl my-8">
         {/* Header */}
         <div className="flex items-center space-x-4">
           <button
