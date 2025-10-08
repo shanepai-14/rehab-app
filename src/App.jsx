@@ -32,7 +32,7 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   const { user, loading } = useAuth();
   const location = useLocation();
 
-  usePusherNotifications(user);
+  // usePusherNotifications(user);
 
   // Cleanup on app unmount
   useEffect(() => {

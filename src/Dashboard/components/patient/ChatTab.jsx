@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import moment from 'moment';
 import pusherService from '../../../Services/pusher';
 
-const ChatTab = ({ user }) => {
+const ChatTab = ({ user , onMessagesRead}) => {
   const [chatList, setChatList] = useState([]);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -153,30 +153,28 @@ const ChatTab = ({ user }) => {
   // Setup Pusher listener using contact_number
   useEffect(() => {
     loadChatList();
-
-    if (!user || !user.contact_number) return;
-
-    // Subscribe to user's channel based on contact_number
-    const channelName = `user.${user.contact_number}`;
-    
-    console.log(`💬 Patient ChatTab subscribing to: ${channelName}`);
-
-    pusherService.subscribeToPublicChannel(channelName, {
-      'message.sent': handleIncomingMessage
-    });
-
-    return () => {
-      console.log('🧹 Patient ChatTab unsubscribing from chat channel');
-      pusherService.unsubscribe(channelName);
-    };
-  }, [user, handleIncomingMessage]);
+  }, [user]);
 
   // Load messages when doctor is selected
   useEffect(() => {
     if (selectedDoctor) {
       loadMessages(selectedDoctor.id);
+
+       apiService.patch(`/chat/read/${selectedDoctor.id}`)
+        .then(() => {
+          // Notify parent to refresh unread count
+          if (onMessagesRead) {
+            onMessagesRead(); 
+          }
+        })
+        .catch(console.error);
+
+              setChatList(prev => prev.map(chat => 
+        chat.id === selectedDoctor.id ? { ...chat, unread_count: 0 } : chat
+      ));
+
     }
-  }, [selectedDoctor]);
+  }, [selectedDoctor, onMessagesRead]);
 
   // Filter chat list
   const filteredChatList = chatList.filter(chat =>
