@@ -1,18 +1,63 @@
-import { useState, useEffect ,useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import moment from 'moment';
 import { 
   XCircle, 
   X,
-  Check ,
+  Check,
   UserCheck,
   Loader2,
   Search,
-  Users
+  Users,
+  Clock,
+  CheckCircle,
+  XCircle as XCircleIcon,
+  PlayCircle,
+  Calendar,
+  UserX
 } from 'lucide-react';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { toast } from 'sonner';
 import LoadingSpinner from '../../../components/ui/LoadingSpinner';
 
+// Status configuration with colors and icons
+const STATUS_CONFIG = {
+  scheduled: { 
+    label: 'Scheduled', 
+    color: 'bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200',
+    activeColor: 'bg-blue-600 text-white border-blue-600',
+    icon: Calendar
+  },
+  confirmed: { 
+    label: 'Confirmed', 
+    color: 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200',
+    activeColor: 'bg-green-600 text-white border-green-600',
+    icon: CheckCircle
+  },
+  in_progress: { 
+    label: 'In Progress', 
+    color: 'bg-purple-100 text-purple-800 border-purple-300 hover:bg-purple-200',
+    activeColor: 'bg-purple-600 text-white border-purple-600',
+    icon: PlayCircle
+  },
+  completed: { 
+    label: 'Completed', 
+    color: 'bg-teal-100 text-teal-800 border-teal-300 hover:bg-teal-200',
+    activeColor: 'bg-teal-600 text-white border-teal-600',
+    icon: CheckCircle
+  },
+  cancelled: { 
+    label: 'Cancelled', 
+    color: 'bg-red-100 text-red-800 border-red-300 hover:bg-red-200',
+    activeColor: 'bg-red-600 text-white border-red-600',
+    icon: XCircleIcon
+  },
+  no_show: { 
+    label: 'No Show', 
+    color: 'bg-gray-100 text-gray-800 border-gray-300 hover:bg-gray-200',
+    activeColor: 'bg-gray-600 text-white border-gray-600',
+    icon: UserX
+  }
+};
 
 const AppointmentModal = ({ isOpen, onClose, appointment, patients, onSave, isLoading }) => {
   const [formData, setFormData] = useState({
@@ -21,6 +66,7 @@ const AppointmentModal = ({ isOpen, onClose, appointment, patients, onSave, isLo
     time: '',
     agenda: 'consultation',
     priority: 'normal',
+    status: 'scheduled', // Added status field
     details: '',
     duration: 30
   });
@@ -49,6 +95,7 @@ const AppointmentModal = ({ isOpen, onClose, appointment, patients, onSave, isLo
         time: moment(appointment.start).format('HH:mm'),
         agenda: appointment.resource.agenda?.toLowerCase() || 'consultation',
         priority: appointment.resource.priority || 'normal',
+        status: appointment.resource.status || 'scheduled', // Load status
         details: appointment.resource.details || '',
         duration: appointment.resource.duration || 30
       });
@@ -62,6 +109,7 @@ const AppointmentModal = ({ isOpen, onClose, appointment, patients, onSave, isLo
         time: '09:00',
         agenda: 'consultation',
         priority: 'normal',
+        status: 'scheduled', // Default status
         details: '',
         duration: 30
       });
@@ -82,7 +130,6 @@ const AppointmentModal = ({ isOpen, onClose, appointment, patients, onSave, isLo
     const isSelected = selectedPatients.some(p => p.id === patient.id);
     
     if (isSelected) {
-      // Remove patient
       const newSelected = selectedPatients.filter(p => p.id !== patient.id);
       setSelectedPatients(newSelected);
       setFormData({ 
@@ -90,7 +137,6 @@ const AppointmentModal = ({ isOpen, onClose, appointment, patients, onSave, isLo
         patientIds: newSelected.map(p => p.id) 
       });
     } else {
-      // Add patient
       const newSelected = [...selectedPatients, patient];
       setSelectedPatients(newSelected);
       setFormData({ 
@@ -103,11 +149,9 @@ const AppointmentModal = ({ isOpen, onClose, appointment, patients, onSave, isLo
   // Handle "Select All" / "Deselect All"
   const handleSelectAll = () => {
     if (selectedPatients.length === filteredPatients.length && filteredPatients.length > 0) {
-      // Deselect all
       setSelectedPatients([]);
       setFormData({ ...formData, patientIds: [] });
     } else {
-      // Select all filtered patients
       setSelectedPatients(filteredPatients);
       setFormData({ 
         ...formData, 
@@ -171,6 +215,7 @@ const AppointmentModal = ({ isOpen, onClose, appointment, patients, onSave, isLo
              .add(formData.duration, 'minutes').toDate(),
         agenda: formData.agenda,
         priority: formData.priority,
+        status: formData.status, // Include status
         details: formData.details,
         duration: formData.duration,
         patients: selectedPatients
@@ -198,7 +243,7 @@ const AppointmentModal = ({ isOpen, onClose, appointment, patients, onSave, isLo
 
   return (
     <div 
-      className="fixed inset-0  bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       onClick={handleBackdropClick}
     >
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl mx-auto max-h-[90vh] overflow-y-auto">
@@ -285,17 +330,10 @@ const AppointmentModal = ({ isOpen, onClose, appointment, patients, onSave, isLo
                             >
                               <div className="flex items-center justify-between">
                                 <div className="flex-1">
-                                  <div className="flex items-center ">
+                                  <div className="flex items-center">
                                     <span className="font-medium text-gray-900">
                                       {patient.first_name} {patient.last_name}
                                     </span>
-                                      {/* <span
-                                  key={patient.id}
-                                  className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800 font-medium"
-                                >
-                                  {patient.patient_type}
-                                  
-                                </span> */}
                                     {isSelected && (
                                       <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                         Selected
@@ -387,6 +425,42 @@ const AppointmentModal = ({ isOpen, onClose, appointment, patients, onSave, isLo
                     required
                     disabled={isSubmitting}
                   />
+                </div>
+              </div>
+
+              {/* Appointment Status - Interactive Chips */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  <Clock className="w-4 h-4 inline mr-1" />
+                  Appointment Status *
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {Object.entries(STATUS_CONFIG).map(([statusKey, config]) => {
+                    const Icon = config.icon;
+                    const isActive = formData.status === statusKey;
+                    
+                    return (
+                      <button
+                        key={statusKey}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, status: statusKey })}
+                        disabled={isSubmitting}
+                        className={`
+                          relative px-3 py-2.5 rounded-lg border-2 transition-all duration-200
+                          flex items-center justify-center gap-2 font-medium text-sm
+                          ${isActive ? config.activeColor : config.color}
+                          disabled:opacity-50 disabled:cursor-not-allowed
+                          transform ${isActive ? 'scale-105 shadow-md' : 'hover:scale-102'}
+                        `}
+                      >
+                        <Icon className="w-4 h-4 flex-shrink-0" />
+                        <span className="truncate">{config.label}</span>
+                        {isActive && (
+                          <Check className="w-4 h-4 flex-shrink-0 ml-auto" />
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -501,5 +575,4 @@ const AppointmentModal = ({ isOpen, onClose, appointment, patients, onSave, isLo
   );
 };
 
-
-export default AppointmentModal
+export default AppointmentModal;
