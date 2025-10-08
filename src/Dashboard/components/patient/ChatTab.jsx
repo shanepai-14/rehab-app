@@ -5,9 +5,9 @@ import { Send, ArrowLeft, Search, Loader2, MessageSquare, Stethoscope } from 'lu
 import apiService from '../../../Services/api';
 import { toast } from 'sonner';
 import moment from 'moment';
-import pusherService from '../../../Services/pusher';
 
-const ChatTab = ({ user , onMessagesRead}) => {
+
+const ChatTab = ({ user , onMessagesRead }) => {
   const [chatList, setChatList] = useState([]);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -58,28 +58,47 @@ const ChatTab = ({ user , onMessagesRead}) => {
     
     if (!newMessage.trim() || !selectedDoctor) return;
 
+    const messageText = newMessage.trim();
+    const tempId = `temp-${Date.now()}`;
+    
+    // Optimistically add message to UI
+    const optimisticMessage = {
+      id: tempId,
+      message: messageText,
+      sender_id: user.id,
+      receiver_id: selectedDoctor.id,
+      is_mine: true,
+      is_read: false,
+      created_at: new Date().toISOString(),
+      formatted_time: moment().format('g:i A'),
+      sender_name: `${user.first_name} ${user.last_name}`
+    };
+
+    setMessages(prev => [...prev, optimisticMessage]);
+    setNewMessage('');
+    setTimeout(scrollToBottom, 100);
+
     try {
       setSending(true);
       const response = await apiService.post('/chat/send', {
         receiver_id: selectedDoctor.id,
-        message: newMessage.trim()
+        message: messageText
       });
 
       if (response.data.success) {
-        setMessages([...messages, response.data.data]);
-        setNewMessage('');
-        setTimeout(scrollToBottom, 100);
-        
-        // Update last message in chat list
-        setChatList(prev => prev.map(chat => 
-          chat.id === selectedDoctor.id
-            ? { ...chat, last_message: { message: newMessage.trim(), created_at: new Date(), is_mine: true } }
-            : chat
+        // Replace optimistic message with real one
+        setMessages(prev => prev.map(msg => 
+          msg.id === tempId ? response.data.data : msg
         ));
+        
+        // Update chat list
+        updateChatListItem(user.id, selectedDoctor.id, messageText, new Date());
       }
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error('Failed to send message');
+      // Remove optimistic message on error
+      setMessages(prev => prev.filter(msg => msg.id !== tempId));
     } finally {
       setSending(false);
     }
@@ -112,43 +131,7 @@ const ChatTab = ({ user , onMessagesRead}) => {
     });
   });
 }, [user.id]);
-  // Handle incoming messages from Pusher
-  const handleIncomingMessage = useCallback((event) => {
-    console.log('💬 Patient chat received message:', event);
-    
-    // Check if message is relevant to current conversation
-    const isRelevantMessage = selectedDoctor && (
-      (event.sender_id === selectedDoctor.id && event.receiver_contact_number === user.contact_number) ||
-      (event.receiver_id === selectedDoctor.id && event.sender_contact_number === user.contact_number)
-    );
-    
-    if (isRelevantMessage) {
-      const newMsg = {
-        id: event.id,
-        message: event.message,
-        sender_id: event.sender_id,
-        receiver_id: event.receiver_id,
-        is_mine: event.sender_contact_number === user.contact_number,
-        is_read: event.is_read,
-        created_at: event.created_at,
-        formatted_time: moment(event.created_at).format('g:i A'),
-        sender_name: event.sender_name
-      };
-      
-      setMessages(prev => {
-        // Check if message already exists to avoid duplicates
-        if (prev.some(m => m.id === event.id)) {
-          return prev;
-        }
-        return [...prev, newMsg];
-      });
-      
-      setTimeout(scrollToBottom, 100);
-    }
 
-    // Always update chat list when any message is received
-   updateChatListItem(event.sender_id, event.receiver_id, event.message, event.created_at);
-  }, [selectedDoctor, user]);
 
   // Setup Pusher listener using contact_number
   useEffect(() => {
