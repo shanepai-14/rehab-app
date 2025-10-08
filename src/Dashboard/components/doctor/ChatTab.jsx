@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import moment from 'moment';
 import pusherService from '../../../Services/pusher';
 
-const ChatTab = ({ user }) => {
+const ChatTab = ({ user , onMessagesRead}) => {
   const [chatList, setChatList] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -195,19 +195,26 @@ const ChatTab = ({ user }) => {
   }, [user, handleIncomingMessage]);
 
   // Load messages when user is selected
-  useEffect(() => {
+    useEffect(() => {
     if (selectedUser) {
       loadMessages(selectedUser.id);
       
       // Mark messages as read when opening chat
-      apiService.patch(`/chat/read/${selectedUser.id}`).catch(console.error);
+      apiService.patch(`/chat/read/${selectedUser.id}`)
+        .then(() => {
+          // Notify parent to refresh unread count
+          if (onMessagesRead) {
+            onMessagesRead();
+          }
+        })
+        .catch(console.error);
       
       // Reset unread count for this user in the list
       setChatList(prev => prev.map(chat => 
         chat.id === selectedUser.id ? { ...chat, unread_count: 0 } : chat
       ));
     }
-  }, [selectedUser]);
+  }, [selectedUser, onMessagesRead]);
 
   // Filter chat list
   const filteredChatList = chatList.filter(chat =>

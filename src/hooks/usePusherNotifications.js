@@ -7,7 +7,7 @@ import { useNotifications } from '../context/NotificationContext';
 const KEY = import.meta.env.VITE_APP_PUSHER_APP_KEY;
 const CLUSTER = import.meta.env.VITE_APP_PUSHER_APP_CLUSTER;
 
-export const usePusherNotifications = (user) => {
+export const usePusherNotifications = (user , onNewMessage) => {
   const { addNotification } = useNotifications();
   
   useEffect(() => {
@@ -172,12 +172,16 @@ export const usePusherNotifications = (user) => {
               }
             }
           });
+
+          if (onNewMessage) {
+            console.log('onNewMessage ', data)
+          onNewMessage(data);
+        }
+
         }
         
         // If there's a callback for new messages (for live chat updates), call it
-        if (onNewMessage) {
-          onNewMessage(data);
-        }
+
       },
 
       
