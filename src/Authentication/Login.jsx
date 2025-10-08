@@ -1,24 +1,16 @@
-import  { useState} from 'react';
-
-
-import { 
-  Phone, 
-  Mail, 
-  Lock, 
-  Shield,
-} from 'lucide-react';
-import { useNavigate ,useLocation } from 'react-router-dom';
-
+import { useState, useEffect } from 'react';
+import { Phone, Mail, Lock } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import { useAuth } from '../hooks/useAuth';
-import RehabLogo from "@/assets/rehab_main_logo.png"; ;
+import RehabLogo from "@/assets/rehab_main_logo.png";
 import { getDashboardPath } from '../utils/navigation';
 
-export default function  Login ({  }) {
-    const location = useLocation();
-    const navigate = useNavigate();
-    const { login } = useAuth();
+export default function Login() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { login } = useAuth();
 
   const [formData, setFormData] = useState({
     login: '',
@@ -27,52 +19,63 @@ export default function  Login ({  }) {
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
-const handleSwitchToRegister = () => {
+  // Check for success message from password reset
+  useEffect(() => {
+    if (location.state?.message) {
+      setSuccessMessage(location.state.message);
+      // Clear the message after 5 seconds
+      setTimeout(() => setSuccessMessage(''), 5000);
+      
+      // Clear location state
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
+
+  const handleSwitchToRegister = () => {
     navigate('/register');
   };
 
-const handleSubmit = async (e) => {
+  const handleForgotPassword = () => {
+    navigate('/forgot-password');
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setErrors({});
+    setSuccessMessage('');
 
     try {
-      // Use AuthContext login method instead of direct API call
       const result = await login(formData);
-      console.log(result);
+      
       if (result.data.success) {
-         const from = location.state?.from?.pathname || '/';
+        const from = location.state?.from?.pathname || '/';
         const dashboardPath = getDashboardPath(result.data.user.role);
-        console.log('Login successful, redirecting to:', from !== '/' ? from : dashboardPath);
         navigate(from !== '/' ? from : dashboardPath, { replace: true });
       } else {
-        console.log(result);
-        if(result.data.requires_verification){
-    navigate(`/verify/${encodeURIComponent(result.data.contact_number)}?reverification=true`, { 
-        replace: true 
-      });
-        }else {
+        if (result.data.requires_verification) {
+          navigate(`/verify/${encodeURIComponent(result.data.contact_number)}?reverification=true`, { 
+            replace: true 
+          });
+        } else {
           setErrors({ login: result.data.message || 'Login failed' });
         }
-     
       }
     } catch (error) {
       console.error('Login error:', error);
-      // setErrors({ 
-      //   login: error.message || 'Something went wrong. Please try again.' 
-      // });
     }
     
     setLoading(false);
   };
 
   return (
-    <div className="min-h-screen  dark:bg-gray-900 flex items-center justify-center px-4 py-8">
+    <div className="min-h-screen dark:bg-gray-900 flex items-center justify-center px-4 py-8">
       <div className="max-w-md w-full space-y-6">
         {/* Header */}
         <div className="text-center">
-          <div className="mx-auto  rounded-xl flex items-center justify-center  overflow-hidden">
+          <div className="mx-auto rounded-xl flex items-center justify-center overflow-hidden">
             <img 
               src={RehabLogo} 
               alt="Rehab Logo" 
@@ -86,6 +89,15 @@ const handleSubmit = async (e) => {
 
         {/* Login Form */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 space-y-6">
+          {/* Success Message */}
+          {successMessage && (
+            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-3">
+              <p className="text-sm text-green-600 dark:text-green-400 text-center">
+                {successMessage}
+              </p>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <Input
               label="Email or Phone Number"
@@ -119,6 +131,14 @@ const handleSubmit = async (e) => {
                 />
                 <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">Remember me</span>
               </label>
+              
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                className="text-sm font-medium text-blue-600 hover:text-blue-500"
+              >
+                Forgot password?
+              </button>
             </div>
 
             <Button 
@@ -143,9 +163,7 @@ const handleSubmit = async (e) => {
             </p>
           </div>
         </div>
-
-
       </div>
     </div>
   );
-};
+}
