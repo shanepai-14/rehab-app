@@ -244,7 +244,8 @@ usePusherNotifications(user, handleNewMessage);
           agenda: appointmentData.agenda,
           priority: appointmentData.priority,
           details: appointmentData.details,
-          duration: appointmentData.duration
+          duration: appointmentData.duration,
+          status: appointmentData.status,
         };
 
         const response = await apiService.put(
@@ -280,7 +281,8 @@ usePusherNotifications(user, handleNewMessage);
                   agenda: appointmentData.agenda,
                   priority: appointmentData.priority,
                   details: appointmentData.details,
-                  duration: appointmentData.duration
+                  duration: appointmentData.duration,
+                 status: appointmentData.status
                 }
               };
             }
