@@ -8,19 +8,87 @@ import {
   Phone,
   Mail,
   Grid3X3,
+  ArrowLeft,
+  Calendar,
+  Clock,
 } from 'lucide-react';
-
-
+import apiService from '../../../Services/api';
 
 const PatientsModal = ({ isOpen, onClose, patients, loading }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewType, setViewType] = useState('table'); // 'table' or 'card'
+  const [viewType, setViewType] = useState('table');
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [viewingAppointments, setViewingAppointments] = useState(false);
+  const [appointments, setAppointments] = useState([]);
+  const [appointmentsLoading, setAppointmentsLoading] = useState(false);
 
   const filteredPatients = patients?.filter(patient =>
-    patient.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    patient.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    patient.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     patient.contact_number?.includes(searchTerm) ||
     patient.district?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
+
+  // Fetch appointments for a specific patient
+  const fetchPatientAppointments = async (patientId) => {
+    setAppointmentsLoading(true);
+    try {
+      const response = await apiService.get(`/appointments/patients/${patientId}`);
+
+      if (response.data.success) {
+        setAppointments(response.data.data);
+      } else {
+        console.error('Failed to fetch appointments:', response.message);
+        setAppointments([]);
+      }
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
+      setAppointments([]);
+    } finally {
+      setAppointmentsLoading(false);
+    }
+  };
+
+  const handleViewPatient = (patient) => {
+    console.log(patient);
+    setSelectedPatient(patient);
+    setViewingAppointments(true);
+    fetchPatientAppointments(patient.id);
+  };
+
+  const handleBackToPatients = () => {
+    setSelectedPatient(null);
+    setViewingAppointments(false);
+    setAppointments([]);
+  };
+
+  const getStatusColor = (status) => {
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      case 'scheduled':
+        return 'bg-blue-100 text-blue-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getPriorityColor = (priority) => {
+    switch (priority?.toLowerCase()) {
+      case 'high':
+      case 'urgent':
+        return 'bg-red-100 text-red-800';
+      case 'medium':
+      case 'normal':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'low':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -30,7 +98,19 @@ const PatientsModal = ({ isOpen, onClose, patients, loading }) => {
         {/* Header */}
         <div className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-semibold text-gray-900">My Patients</h2>
+            <div className="flex items-center">
+              {viewingAppointments && (
+                <button
+                  onClick={handleBackToPatients}
+                  className="mr-4 text-gray-600 hover:text-gray-900 p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </button>
+              )}
+              <h2 className="text-2xl font-semibold text-gray-900">
+                {viewingAppointments ? `${selectedPatient?.name || 'Patient'}'s Appointments` : 'My Patients'}
+              </h2>
+            </div>
             <button 
               onClick={onClose} 
               className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-full"
@@ -39,56 +119,197 @@ const PatientsModal = ({ isOpen, onClose, patients, loading }) => {
             </button>
           </div>
           
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            {/* Search Bar */}
-            <div className="relative flex-1 max-w-md">
-              <input
-                type="text"
-                placeholder="Search patients by name, phone, or district..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-              <User className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+          {!viewingAppointments && (
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="relative flex-1 max-w-md">
+                <input
+                  type="text"
+                  placeholder="Search patients by name, phone, or district..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+                <User className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+              </div>
+              
+              <div className="flex bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setViewType('table')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    viewType === 'table'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <div className="flex items-center">
+                    <Table className="h-4 w-4 mr-2" />
+                    Table
+                  </div>
+                </button>
+                <button
+                  onClick={() => setViewType('card')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    viewType === 'card'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <div className="flex items-center">
+                    <Grid3X3 className="h-4 w-4 mr-2" />
+                    Cards
+                  </div>
+                </button>
+              </div>
             </div>
-            
-            {/* View Toggle Buttons */}
-            <div className="flex bg-gray-100 rounded-lg p-1">
-              <button
-                onClick={() => setViewType('table')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  viewType === 'table'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <div className="flex items-center">
-                  <Table className="h-4 w-4 mr-2" />
-                  Table
-                </div>
-              </button>
-              <button
-                onClick={() => setViewType('card')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  viewType === 'card'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <div className="flex items-center">
-                  <Grid3X3 className="h-4 w-4 mr-2" />
-                  Cards
-                </div>
-              </button>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Content Area */}
         <div className="flex-1 overflow-hidden">
-          {loading ? (
+          {viewingAppointments ? (
+            // Appointments View
+            <div className="h-full overflow-auto px-6 py-4">
+              {/* Patient Info Card */}
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+                <div className="flex items-center">
+                  <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center">
+                    <User className="h-8 w-8 text-blue-600" />
+                  </div>
+                  <div className="ml-4 flex-1">
+                    <h3 className="text-xl font-semibold text-gray-900">
+                      {selectedPatient?.name || `${selectedPatient?.first_name} ${selectedPatient?.last_name}`.trim()}
+                    </h3>
+                    <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                      {selectedPatient?.contact_number && (
+                        <div className="flex items-center">
+                          <Phone className="h-4 w-4 mr-2 text-gray-400" />
+                          {selectedPatient.contact_number}
+                        </div>
+                      )}
+                      {selectedPatient?.email && (
+                        <div className="flex items-center">
+                          <Mail className="h-4 w-4 mr-2 text-gray-400" />
+                          {selectedPatient.email}
+                        </div>
+                      )}
+                      {selectedPatient?.district && (
+                        <div className="flex items-center">
+                          <MapPin className="h-4 w-4 mr-2 text-gray-400" />
+                          District {selectedPatient.district}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Appointments Table */}
+              <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                    <Calendar className="h-5 w-5 mr-2" />
+                    Appointment History
+                  </h3>
+                </div>
+                
+                {appointmentsLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                      <p className="text-gray-600">Loading appointments...</p>
+                    </div>
+                  </div>
+                ) : appointments.length === 0 ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <Calendar className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                      <p className="text-gray-600 text-lg">No appointments found for this patient.</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Date
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Time
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Agenda
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Doctor
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Priority
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Location
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {appointments.map(appointment => (
+                          <tr key={appointment.id} className="hover:bg-gray-50 transition-colors">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center text-sm text-gray-900">
+                                <Calendar className="h-4 w-4 mr-2 text-gray-400" />
+                                {appointment.formatted_date || appointment.appointment_date}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center text-sm text-gray-900">
+                                <Clock className="h-4 w-4 mr-2 text-gray-400" />
+                                {appointment.appointment_time}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="text-sm text-gray-900 max-w-xs truncate">
+                                {appointment.agenda || '-'}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{appointment.doctor || 'Unassigned'}</div>
+                              {appointment.doctor_specialization && (
+                                <div className="text-xs text-gray-500">{appointment.doctor_specialization}</div>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(appointment.status)}`}>
+                                {appointment.status}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPriorityColor(appointment.priority)}`}>
+                                {appointment.priority}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-start text-sm text-gray-600">
+                                <MapPin className="h-4 w-4 mr-2 text-gray-400 flex-shrink-0 mt-0.5" />
+                                <span className="line-clamp-2">{appointment.location || '-'}</span>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : loading ? (
             <div className="flex items-center justify-center h-full">
-              <LoadingSpinner message="Loading patients..." />
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading patients...</p>
+              </div>
             </div>
           ) : filteredPatients.length === 0 ? (
             <div className="flex items-center justify-center h-full">
@@ -102,7 +323,6 @@ const PatientsModal = ({ isOpen, onClose, patients, loading }) => {
           ) : (
             <div className="h-full overflow-auto">
               {viewType === 'table' ? (
-                // Table View
                 <div className="px-6 py-4">
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
@@ -152,12 +372,12 @@ const PatientsModal = ({ isOpen, onClose, patients, loading }) => {
                               <div className="text-sm text-gray-900">{patient.district || '-'}</div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                              <button className="text-blue-600 hover:text-blue-900 mr-4">
+                              <button 
+                                onClick={() => handleViewPatient(patient)}
+                                className="text-blue-600 hover:text-blue-900 font-medium"
+                              >
                                 View
                               </button>
-                              {/* <button className="text-gray-600 hover:text-gray-900">
-                                Edit
-                              </button> */}
                             </td>
                           </tr>
                         ))}
@@ -166,7 +386,6 @@ const PatientsModal = ({ isOpen, onClose, patients, loading }) => {
                   </div>
                 </div>
               ) : (
-                // Card View
                 <div className="px-6 py-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {filteredPatients.map(patient => (
@@ -208,13 +427,13 @@ const PatientsModal = ({ isOpen, onClose, patients, loading }) => {
                             )}
                           </div>
                           
-                          <div className="mt-6 flex space-x-2">
-                            <button className="flex-1 px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors">
+                          <div className="mt-6">
+                            <button 
+                              onClick={() => handleViewPatient(patient)}
+                              className="w-full px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
+                            >
                               View Details
                             </button>
-                            {/* <button className="px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-md hover:bg-gray-50 transition-colors">
-                              Edit
-                            </button> */}
                           </div>
                         </div>
                       </div>
@@ -227,7 +446,7 @@ const PatientsModal = ({ isOpen, onClose, patients, loading }) => {
         </div>
 
         {/* Footer with Results Count */}
-        {!loading && filteredPatients.length > 0 && (
+        {!loading && !viewingAppointments && filteredPatients.length > 0 && (
           <div className="bg-gray-50 border-t border-gray-200 px-6 py-3 flex-shrink-0">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-700">
