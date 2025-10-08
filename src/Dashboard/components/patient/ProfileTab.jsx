@@ -16,6 +16,7 @@ import {
 import apiService from '../../../Services/api';
 import { toast } from 'sonner';
 import { philippineLocations } from '../../../data/philippineLocations';
+import useAuth from '../../../hooks/useAuth';
 
 const formatDate = (dateString) => {
   if (!dateString) return '';
@@ -143,6 +144,8 @@ const SearchableSelect = ({
 };
 
 const ProfileTab = ({ user, onUserUpdate }) => {
+  const { updateUser } = useAuth();
+  console.log(user);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -154,7 +157,8 @@ const ProfileTab = ({ user, onUserUpdate }) => {
     address: user?.address || '',
     province: user?.province || '',
     municipality: user?.municipality || '',
-    barangay: user?.barangay || ''
+    barangay: user?.barangay || '',
+    patient_type: user?.patient_type || ''
   });
 
   // Get available provinces
@@ -210,6 +214,7 @@ const ProfileTab = ({ user, onUserUpdate }) => {
         toast.success('Profile updated successfully');
         setIsEditing(false);
         
+        updateUser(response.data.data);
         // Update user data in parent component if callback provided
         if (onUserUpdate && response.data.data) {
           onUserUpdate(response.data.data);
@@ -236,7 +241,8 @@ const ProfileTab = ({ user, onUserUpdate }) => {
       address: user?.address || '',
       province: user?.province || '',
       municipality: user?.municipality || '',
-      barangay: user?.barangay || ''
+      barangay: user?.barangay || '',
+      patient_type: user?.patient_type || ''
     });
     setIsEditing(false);
   };
@@ -397,7 +403,7 @@ const ProfileTab = ({ user, onUserUpdate }) => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   <User className="w-4 h-4 mr-2" />
@@ -441,6 +447,27 @@ const ProfileTab = ({ user, onUserUpdate }) => {
                   </p>
                 )}
               </div>
+            <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Patient Type *
+                </label>
+                <select
+                  name="patient_type"
+                  value={formData.patient_type}
+                    disabled={!isEditing || loading}
+                  onChange={handleInputChange}
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
+                    isEditing ? 'border-gray-300 dark:border-gray-600' : 'bg-gray-50 dark:bg-gray-800 border-gray-200 cursor-not-allowed'
+                  }`}
+                >
+                  <option value="">Select</option>
+                  <option value="outpatient">OUTPATIENT</option>
+                  <option value="aftercare">AFTERCARE</option>
+                </select>
+
+              </div>
+
+
             </div>
 
             <div>

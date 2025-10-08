@@ -74,6 +74,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateUser = (updatedUserData) => {
+    const updatedUser = { ...user, ...updatedUserData };
+    setUser(updatedUser);
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+  };
+
   const logout = () => {
     apiService.logout();
     setUser(null);
@@ -88,7 +94,8 @@ export const AuthProvider = ({ children }) => {
     logout,
     loading,
     pendingVerification,
-    setPendingVerification
+    setPendingVerification,
+    updateUser
   };
 
   return (

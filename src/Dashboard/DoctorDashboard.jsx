@@ -535,7 +535,7 @@ const DoctorDashboard = ({ user, onLogout }) => {
                 <NotificationBell />
                 <button 
                   onClick={onLogout}
-                  className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 md:hidden"
+                  className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 "
                 >
                   <LogOut className="h-5 w-5" />
                 </button>
