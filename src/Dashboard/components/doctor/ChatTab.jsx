@@ -5,9 +5,9 @@ import { Send, ArrowLeft, Search, Loader2, MessageSquare } from 'lucide-react';
 import apiService from '../../../Services/api';
 import { toast } from 'sonner';
 import moment from 'moment';
-import pusherService from '../../../Services/pusher';
 
-const ChatTab = ({ user , onMessagesRead}) => {
+
+const ChatTab = ({ user , onMessagesRead }) => {
   const [chatList, setChatList] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -134,44 +134,6 @@ const ChatTab = ({ user , onMessagesRead}) => {
       setSending(false);
     }
   };
-
-  // Handle incoming messages from Pusher
-//   const handleIncomingMessage = useCallback((event) => {
-//     console.log('💬 Chat tab received message:', event);
-    
-//     // Check if message is relevant to current conversation
-//     const isRelevantMessage = selectedUser && (
-//       (event.sender_id === selectedUser.id && event.receiver_contact_number === user.contact_number) ||
-//       (event.receiver_id === selectedUser.id && event.sender_contact_number === user.contact_number)
-//     );
-    
-//     if (isRelevantMessage) {
-//       const newMsg = {
-//         id: event.id,
-//         message: event.message,
-//         sender_id: event.sender_id,
-//         receiver_id: event.receiver_id,
-//         is_mine: event.sender_contact_number === user.contact_number,
-//         is_read: event.is_read,
-//         created_at: event.created_at,
-//         formatted_time: moment(event.created_at).format('g:i A'),
-//         sender_name: event.sender_name
-//       };
-      
-//       setMessages(prev => {
-//         // Check if message already exists to avoid duplicates
-//         if (prev.some(m => m.id === event.id)) {
-//           return prev;
-//         }
-//         return [...prev, newMsg];
-//       });
-      
-//       setTimeout(scrollToBottom, 100);
-//     }
-
-//     // Update chat list item only (don't reload entire list)
-//     updateChatListItem(event.sender_id, event.receiver_id, event.message, event.created_at);
-//   }, [selectedUser, user, updateChatListItem]);
 
   useEffect(() => {
     loadChatList();

@@ -342,96 +342,102 @@ usePusherNotifications(user, handleNewMessage);
 
 
 
-  const renderTabContent = () => {
-    if (loading && activeTab !== 0) {
-      return <LoadingSpinner message="Loading..." />;
-    }
-
-    switch (activeTab) {
-      case 0:
-        return <OverviewTab />;
-      case 1:
-        return <AppointmentsTab  
-        appointments={appointments} 
-        handleRetry={handleRetry} 
-        error={error} 
-        handleSelectEvent={handleSelectEvent}
-        handleSelectSlot={handleSelectSlot}
-        loading={loading}
-        />;
-      case 2:
-        return <ChatTab user={user} />;  
-      case 3:
-        return <ProfileTab  user={user}/>;
-      default:
-        return <OverviewTab />;
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm">
-        <div className="px-4 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Patient Portal</h1>
-            <div className="flex items-center space-x-3">
-              <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-                <NotificationBell />
-              </button>
-              <button 
-                onClick={onLogout}
-                className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600"
-              >
-                <LogOut className="h-5 w-5" />
-              </button>
-            </div>
+return (
+  <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    {/* Header */}
+    <div className="bg-white dark:bg-gray-800 shadow-sm">
+      <div className="px-4 py-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Patient Portal</h1>
+          <div className="flex items-center space-x-3">
+            <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+              <NotificationBell />
+            </button>
+            <button 
+              onClick={onLogout}
+              className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600"
+            >
+              <LogOut className="h-5 w-5" />
+            </button>
           </div>
         </div>
       </div>
+    </div>
 
-      {/* Main Content */}
-      <div className="px-4 py-6">
-        {renderTabContent()}
+    {/* Main Content */}
+    <div className="px-4 py-6">
+      {/* Overview Tab */}
+      <div className={activeTab === 0 ? 'block' : 'hidden'}>
+        <OverviewTab />
       </div>
 
-      {/* Appointment Details Modal */}
-      <PatientAppointmentDetailsModal
-        isOpen={isDetailsModalOpen}
-        onClose={() => setIsDetailsModalOpen(false)}
-        appointment={selectedAppointment}
-      />
+      {/* Appointments Tab */}
+      <div className={activeTab === 1 ? 'block' : 'hidden'}>
+        {loading ? (
+          <LoadingSpinner message="Loading..." />
+        ) : (
+          <AppointmentsTab  
+            appointments={appointments} 
+            handleRetry={handleRetry} 
+            error={error} 
+            handleSelectEvent={handleSelectEvent}
+            handleSelectSlot={handleSelectSlot}
+            loading={loading}
+          />
+        )}
+      </div>
 
-      {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
-        <div className="flex justify-around py-2">
-          {tabs.map((tab, index) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === index;
-            return (
-       <button
-                key={index}
-                onClick={() => setActiveTab(index)}
-                className={`flex flex-col items-center py-2 px-4 rounded-lg transition-colors relative ${
-                  isActive 
-                    ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400' 
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                }`}
-              >
-                <div className="relative">
-                  <Icon className="h-5 w-5 mb-1" />
-                  {tab.badge > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                      {tab.badge > 9 ? '9+' : tab.badge}
-                    </span>
-                  )}
-                </div>
-                <span className="text-xs font-medium">{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
+      {/* Chat Tab */}
+      <div className={activeTab === 2 ? 'block' : 'hidden'}>
+        <ChatTab 
+          user={user}  
+          onMessagesRead={loadUnreadCount}
+        />
+      </div>
+
+      {/* Profile Tab */}
+      <div className={activeTab === 3 ? 'block' : 'hidden'}>
+        <ProfileTab user={user} />
       </div>
     </div>
-  );
+
+    {/* Appointment Details Modal */}
+    <PatientAppointmentDetailsModal
+      isOpen={isDetailsModalOpen}
+      onClose={() => setIsDetailsModalOpen(false)}
+      appointment={selectedAppointment}
+    />
+
+    {/* Bottom Navigation */}
+    <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+      <div className="flex justify-around py-2">
+        {tabs.map((tab, index) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === index;
+          return (
+            <button
+              key={index}
+              onClick={() => setActiveTab(index)}
+              className={`flex flex-col items-center py-2 px-4 rounded-lg transition-colors relative ${
+                isActive 
+                  ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400' 
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+              }`}
+            >
+              <div className="relative">
+                <Icon className="h-5 w-5 mb-1" />
+                {tab.badge > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                    {tab.badge > 9 ? '9+' : tab.badge}
+                  </span>
+                )}
+              </div>
+              <span className="text-xs font-medium">{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  </div>
+);
 }
