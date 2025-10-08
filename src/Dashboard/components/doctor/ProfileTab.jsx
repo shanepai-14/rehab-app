@@ -19,7 +19,7 @@ import {
 import apiService from '../../../Services/api';
 import { toast } from 'sonner';
 import { philippineLocations } from '../../../data/philippineLocations';
-
+import useAuth from '../../../hooks/useAuth';
 const formatDate = (dateString) => {
   if (!dateString) return '';
   return new Date(dateString).toISOString().split('T')[0];
@@ -146,6 +146,7 @@ const SearchableSelect = ({
 };
 
 const ProfileTab = ({ user, onUserUpdate, onLogout }) => {
+const { updateUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -244,6 +245,7 @@ const ProfileTab = ({ user, onUserUpdate, onLogout }) => {
         toast.success('Profile updated successfully');
         setIsEditing(false);
         
+          updateUser(response.data.data);
         // Update user data in parent component if callback provided
         if (onUserUpdate && response.data.data) {
           onUserUpdate(response.data.data);
