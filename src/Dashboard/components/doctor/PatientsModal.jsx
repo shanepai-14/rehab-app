@@ -11,6 +11,8 @@ import {
   ArrowLeft,
   Calendar,
   Clock,
+  FileText,
+  Activity,
 } from 'lucide-react';
 import apiService from '../../../Services/api';
 
@@ -21,6 +23,10 @@ const PatientsModal = ({ isOpen, onClose, patients, loading }) => {
   const [viewingAppointments, setViewingAppointments] = useState(false);
   const [appointments, setAppointments] = useState([]);
   const [appointmentsLoading, setAppointmentsLoading] = useState(false);
+  const [subTab, setSubTab] = useState('appointments');
+  const [progress, setProgress] = useState([]);
+  const [progressLoading, setProgressLoading] = useState(false);
+  const [progressError, setProgressError] = useState(null);
 
   const filteredPatients = patients?.filter(patient =>
     patient.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -53,6 +59,7 @@ const PatientsModal = ({ isOpen, onClose, patients, loading }) => {
     console.log(patient);
     setSelectedPatient(patient);
     setViewingAppointments(true);
+    setSubTab('appointments');
     fetchPatientAppointments(patient.id);
   };
 
@@ -60,6 +67,8 @@ const PatientsModal = ({ isOpen, onClose, patients, loading }) => {
     setSelectedPatient(null);
     setViewingAppointments(false);
     setAppointments([]);
+    setProgress([]);
+    setSubTab('appointments');
   };
 
   const getStatusColor = (status) => {
@@ -203,8 +212,43 @@ const PatientsModal = ({ isOpen, onClose, patients, loading }) => {
                 </div>
               </div>
 
-              {/* Appointments Table */}
+              {/* Sub-tabs */}
               <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                <div className="px-6 pt-4">
+                  <div className="flex gap-2 border-b">
+                    <button
+                      onClick={() => setSubTab('appointments')}
+                      className={`px-4 py-2 -mb-px border-b-2 ${subTab==='appointments' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-gray-900'}`}
+                    >
+                      <span className="inline-flex items-center gap-2"><Calendar className="h-4 w-4"/>Appointments</span>
+                    </button>
+                    <button
+                      onClick={async () => {
+                        setSubTab('progress');
+                        if (progress.length === 0 && selectedPatient?.id) {
+                          try {
+                            setProgressLoading(true);
+                            setProgressError(null);
+                            const res = await apiService.get('/progress-records', { params: { patient_id: selectedPatient.id, per_page: 100 } });
+                            const payload = res.data?.data || res.data;
+                            setProgress(payload?.data || payload || []);
+                          } catch (e) {
+                            setProgressError(e.message || 'Failed to load progress');
+                          } finally {
+                            setProgressLoading(false);
+                          }
+                        }
+                      }}
+                      className={`px-4 py-2 -mb-px border-b-2 ${subTab==='progress' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-gray-900'}`}
+                    >
+                      <span className="inline-flex items-center gap-2"><FileText className="h-4 w-4"/>Progress</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Appointments Table */}
+                {subTab === 'appointments' && (
+                <>
                 <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
                   <h3 className="text-lg font-semibold text-gray-900 flex items-center">
                     <Calendar className="h-5 w-5 mr-2" />
@@ -290,17 +334,60 @@ const PatientsModal = ({ isOpen, onClose, patients, loading }) => {
                                 {appointment.priority}
                               </span>
                             </td>
-                            <td className="px-6 py-4">
-                              <div className="flex items-start text-sm text-gray-600">
-                                <MapPin className="h-4 w-4 mr-2 text-gray-400 flex-shrink-0 mt-0.5" />
-                                <span className="line-clamp-2">{appointment.location || '-'}</span>
-                              </div>
-                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{appointment.location || '—'}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
+                )}
+                </>
+                )}
+
+                {/* Progress Table */}
+                {subTab === 'progress' && (
+                  <>
+                    <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                      <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                        <Activity className="h-5 w-5 mr-2" />
+                        Progress Report
+                      </h3>
+                    </div>
+                    <div className="overflow-x-auto">
+                      {progressLoading ? (
+                        <div className="p-6 text-center">Loading progress...</div>
+                      ) : progressError ? (
+                        <div className="p-6 text-center text-red-600">{progressError}</div>
+                      ) : progress.length === 0 ? (
+                        <div className="p-6 text-center">No progress records found</div>
+                      ) : (
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Session Date</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type of Therapy</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Therapist</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Goals</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Activities</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Evaluation</th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {progress.map(rec => (
+                              <tr key={rec.id} className="hover:bg-gray-50">
+                                <td className="px-6 py-4 whitespace-nowrap">{rec.session_date}</td>
+                                <td className="px-6 py-4 whitespace-nowrap">{rec.therapy_type}</td>
+                                <td className="px-6 py-4 whitespace-nowrap">{rec.therapist ? `${rec.therapist.first_name} ${rec.therapist.last_name}` : '-'}</td>
+                                <td className="px-6 py-4 max-w-xs">{rec.goals_set}</td>
+                                <td className="px-6 py-4 max-w-xs">{rec.activities_done}</td>
+                                <td className="px-6 py-4 max-w-xs">{rec.evaluation_summary}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+                  </>
                 )}
               </div>
             </div>

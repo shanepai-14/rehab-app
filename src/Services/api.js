@@ -312,6 +312,40 @@ async login(credentials) {
     }
   }
 
+  // ==================== PATIENT PROGRESS RECORDS ====================
+
+  async getProgressRecords(params = {}) {
+    try {
+      return await this.client.get('/progress-records', { params });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async createProgressRecord(payload) {
+    try {
+      return await this.client.post('/progress-records', payload);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updateProgressRecord(id, payload) {
+    try {
+      return await this.client.put(`/progress-records/${id}`, payload);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async deleteProgressRecord(id) {
+    try {
+      return await this.client.delete(`/progress-records/${id}`);
+    } catch (error) {
+      throw error;
+    }
+  }
+
   // ==================== FILE UPLOAD METHODS ====================
 
   async uploadFile(file, path = '/upload') {

@@ -7,54 +7,55 @@ export default function MotivationalQuotes() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchQuote = async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      // Using ZenQuotes API - free and no auth required
-      const response = await fetch('https://api.quotable.io/random?tags=inspirational|motivational|success|perseverance');
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch quote');
+
+
+const fetchQuote = async () => {
+  setLoading(true);
+  setError(null);
+
+  try {
+    const response = await apiService.get(
+      'https://api.quotable.io/random?tags=inspirational|motivational|success|perseverance'
+    );
+
+    const data = response.data;
+
+    setQuote({
+      text: data.content,
+      author: data.author,
+    });
+  } catch (err) {
+    setError('Unable to load quote');
+
+    const fallbackQuotes = [
+      {
+        text: "Every small step forward is progress. Celebrate your victories, no matter how small.",
+        author: "Recovery Wisdom"
+      },
+      {
+        text: "Your body has an amazing ability to heal. Trust the process and stay committed.",
+        author: "Rehabilitation Guide"
+      },
+      {
+        text: "Strength doesn't come from what you can do. It comes from overcoming the things you once thought you couldn't.",
+        author: "Unknown"
+      },
+      {
+        text: "Recovery is not a race. You don't have to feel guilty for taking the time you need to heal.",
+        author: "Wellness Support"
+      },
+      {
+        text: "The only way out is through. Keep going, you're doing better than you think.",
+        author: "Healing Journey"
       }
-      
-      const data = await response.json();
-      setQuote({
-        text: data.content,
-        author: data.author
-      });
-    } catch (err) {
-      setError('Unable to load quote');
-      // Fallback quotes for rehab patients
-      const fallbackQuotes = [
-        {
-          text: "Every small step forward is progress. Celebrate your victories, no matter how small.",
-          author: "Recovery Wisdom"
-        },
-        {
-          text: "Your body has an amazing ability to heal. Trust the process and stay committed.",
-          author: "Rehabilitation Guide"
-        },
-        {
-          text: "Strength doesn't come from what you can do. It comes from overcoming the things you once thought you couldn't.",
-          author: "Unknown"
-        },
-        {
-          text: "Recovery is not a race. You don't have to feel guilty for taking the time you need to heal.",
-          author: "Wellness Support"
-        },
-        {
-          text: "The only way out is through. Keep going, you're doing better than you think.",
-          author: "Healing Journey"
-        }
-      ];
-      
-      setQuote(fallbackQuotes[Math.floor(Math.random() * fallbackQuotes.length)]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    ];
+
+    setQuote(fallbackQuotes[Math.floor(Math.random() * fallbackQuotes.length)]);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   useEffect(() => {
     fetchQuote();

@@ -47,7 +47,7 @@ const formatText = (text) => {
   return text.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
 };
 
-const AppointmentDetailsModal = ({ appointment, onClose, onEdit, isOpen, isUpdatingStatus }) => {
+const AppointmentDetailsModal = ({ appointment, onClose, onEdit, isOpen, isUpdatingStatus, onAddProgress }) => {
   if (!appointment) return null;
   if (!isOpen) return null;
 
@@ -153,6 +153,12 @@ const AppointmentDetailsModal = ({ appointment, onClose, onEdit, isOpen, isUpdat
               className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
             >
               Close
+            </button>
+            <button
+              onClick={() => onAddProgress && onAddProgress(appointment)}
+              className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium"
+            >
+              Add Progress
             </button>
             <button
               onClick={() => onEdit(appointment)}

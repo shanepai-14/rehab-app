@@ -6,7 +6,8 @@ import {
   Calendar,
   Users,
   MessageSquare,
-  User
+  User,
+  Activity
 } from 'lucide-react';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import apiService from '../Services/api';
@@ -21,6 +22,9 @@ import AppointmentDetailsModal from './components/doctor/AppointmentDetailsModal
 import AppointmentModal from './components/doctor/AppointmentModal';
 import NotificationBell from './components/NotificationBell';
 import ChatTab from './components/doctor/ChatTab';
+import ProgressTab from './components/doctor/ProgressTab';
+import ProgressRecordForm from './components/doctor/ProgressRecordForm';
+import PatientProgressModal from './components/doctor/PatientProgressModal';
 import { formatText } from '../utils/navigation';
 import ProfileTab from './components/doctor/ProfileTab';
 import { usePusherNotifications } from '../hooks/usePusherNotifications';
@@ -36,6 +40,10 @@ const DoctorDashboard = ({ user, onLogout }) => {
   const [isPatientsModalOpen, setIsPatientsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState(null);
+  const [isProgressFormOpen, setIsProgressFormOpen] = useState(false);
+  const [progressInitial, setProgressInitial] = useState(null);
+  const [isPatientProgressOpen, setIsPatientProgressOpen] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
@@ -48,6 +56,7 @@ const DoctorDashboard = ({ user, onLogout }) => {
     { label: 'Overview', icon: LayoutDashboard },
     { label: 'Appointments', icon: Calendar },
     { label: 'Patients', icon: Users },
+    { label: 'Progress', icon: Activity },
     { label: 'Chat', icon: MessageSquare, badge: unreadCount },
     { label: 'Profile', icon: User }
   ];
@@ -236,11 +245,51 @@ usePusherNotifications(user, handleNewMessage);
     setIsPatientsModalOpen(true);
   };
 
+  const handleOpenPatientProgress = (patient) => {
+    setSelectedPatient(patient);
+    setIsPatientProgressOpen(true);
+  };
+
   // Handle editing appointment
   const handleEditAppointment = (appointment) => {
     setEditingAppointment(appointment);
     setIsDetailsModalOpen(false);
     setIsEditModalOpen(true);
+  };
+
+  const handleAddProgressFromAppointment = async (appointment) => {
+    // Ensure patients list is available for dropdown
+    if (patients.length === 0) {
+      try {
+        const res = await apiService.getDoctorPatients();
+        if (res?.data) setPatients(res.data.data.data);
+      } catch (e) {
+        console.error('Failed loading patients for progress form', e);
+      }
+    }
+    const firstPatient = (appointment.resource?.patients && appointment.resource.patients[0]) || null;
+    setProgressInitial({
+      session_date: moment(appointment.start).format('YYYY-MM-DD'),
+      patient_id: firstPatient?.id || appointment.resource?.patientId || '',
+      therapy_type: appointment.resource?.agenda || '',
+      attending_therapist_id: user?.id,
+    });
+    setIsDetailsModalOpen(false);
+    setIsProgressFormOpen(true);
+  };
+
+  const handleSaveProgress = async (payload) => {
+    try {
+      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      const body = { ...payload, attending_therapist_id: payload.attending_therapist_id || currentUser?.id };
+      const res = await apiService.createProgressRecord(body);
+      if (res?.data?.success) toast.success('Progress saved');
+      setIsProgressFormOpen(false);
+      setProgressInitial(null);
+    } catch (err) {
+      console.error(err);
+      toast.error(err.message || 'Failed to save progress');
+    }
   };
 
   // Handle status updates
@@ -549,7 +598,8 @@ usePusherNotifications(user, handleNewMessage);
           patients.map((patient) => (
             <div
               key={patient.id}
-              className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              onClick={() => handleOpenPatientProgress(patient)}
+              className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
@@ -590,7 +640,12 @@ usePusherNotifications(user, handleNewMessage);
   </div>
 
   {/* Chat Tab */}
-  <div className={activeTab === 3 ? 'block' : 'hidden'}>
+  <div className={activeTab === 3 ? 'block pb-20' : 'hidden'}>
+    <ProgressTab />
+  </div>
+
+  {/* Chat Tab */}
+  <div className={activeTab === 4 ? 'block' : 'hidden'}>
     <ChatTab 
       user={user}
        onMessagesRead={loadUnreadCount}
@@ -598,7 +653,7 @@ usePusherNotifications(user, handleNewMessage);
   </div>
 
   {/* Profile Tab */}
-  <div className={activeTab === 4 ? 'block' : 'hidden'}>
+  <div className={activeTab === 5 ? 'block' : 'hidden'}>
     <ProfileTab user={user} />
   </div>
 </div>
@@ -642,6 +697,7 @@ usePusherNotifications(user, handleNewMessage);
           onEdit={handleEditAppointment}
           onStatusUpdate={handleStatusUpdate}
           isUpdating={isUpdatingStatus}
+          onAddProgress={handleAddProgressFromAppointment}
         />
 
         <AppointmentModal
@@ -660,6 +716,22 @@ usePusherNotifications(user, handleNewMessage);
           loading={loadingPatients}
         />
       </div>
+
+      {/* Progress Record Form from Appointment */}
+      <ProgressRecordForm 
+        isOpen={isProgressFormOpen}
+        onClose={() => setIsProgressFormOpen(false)}
+        onSave={handleSaveProgress}
+        initialData={progressInitial || {}}
+        patients={patients}
+      />
+
+      {/* Patient Progress Modal */}
+      <PatientProgressModal
+        isOpen={isPatientProgressOpen}
+        onClose={() => setIsPatientProgressOpen(false)}
+        patient={selectedPatient}
+      />
     </div>
   );
 };

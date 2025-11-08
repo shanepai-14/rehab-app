@@ -18,6 +18,7 @@ import ProfileTab from "./components/patient/ProfileTab";
 import AppointmentsTab from "./AppointmentsTab";
 import NotificationBell from "./components/NotificationBell";
 import ChatTab from "./components/patient/ChatTab";
+import ProgressTab from "./components/patient/ProgressTab";
 import { formatText } from "../utils/navigation";
 import MotivationalQuotes from "./components/patient/MotivationalQuotes";
 import { usePusherNotifications } from '../hooks/usePusherNotifications';
@@ -146,7 +147,8 @@ export default function PatientDashboard({ user, onLogout }) {
   const tabs = [
     { icon: Activity, label: 'Overview' },
     { icon: Calendar, label: 'Appointments' },
-     { label: 'Chat', icon: MessageSquare, badge: unreadCount },
+    { icon: Activity, label: 'Progress' },
+    { label: 'Chat', icon: MessageSquare, badge: unreadCount },
     { icon: User, label: 'Profile' }
   ];
 
@@ -387,8 +389,13 @@ return (
         )}
       </div>
 
-      {/* Chat Tab */}
+      {/* Progress Tab */}
       <div className={activeTab === 2 ? 'block' : 'hidden'}>
+        <ProgressTab />
+      </div>
+
+      {/* Chat Tab */}
+      <div className={activeTab === 3 ? 'block' : 'hidden'}>
         <ChatTab 
           user={user}  
           onMessagesRead={loadUnreadCount}
@@ -396,7 +403,7 @@ return (
       </div>
 
       {/* Profile Tab */}
-      <div className={activeTab === 3 ? 'block' : 'hidden'}>
+      <div className={activeTab === 4 ? 'block' : 'hidden'}>
         <ProfileTab user={user} />
       </div>
     </div>
